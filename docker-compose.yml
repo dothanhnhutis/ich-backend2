@@ -1,0 +1,62 @@
+# version: "3.9"
+
+services:
+  # mongodb:
+  #   container_name: mongodb_container
+  #   image: mongo:latest
+  #   restart: always
+  #   ports:
+  #     - 27017:27017
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=root
+  #     - MONGO_INITDB_ROOT_PASSWORD=secret
+  #     # - MONGO_INITDB_DATABASE="users" not working
+  #   volumes:
+  #     - ./docker_volumes/data:/data/db
+
+  # mongo-express:
+  #   container_name: mongo-express_container
+  #   image: mongo-express
+  #   restart: always
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: secret
+  #     ME_CONFIG_MONGODB_URL: mongodb://root:secret@mongodb:27017
+  #     ME_CONFIG_BASICAUTH: false
+
+  redis:
+    container_name: redis_container
+    image: redis:alpine
+    restart: always
+    ports:
+      - 6379:6379
+    command: redis-server --loglevel warning
+    volumes:
+      - ./docker_volumes/cache:/data
+
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgresql
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=postgresdb
+    ports:
+      - 5432:5432
+    volumes:
+      - ./docker_volumes/postgres:/var/lib/postgresql
+
+  # rabbitmq:
+  #   container_name: rabbitmq_container
+  #   image: rabbitmq:management-alpine
+  #   restart: always
+  #   ports:
+  #     - 5672:5672
+  #     - 15672:15672
+  #   environment:
+  #     - RABBITMQ_DEFAULT_VHOST=my-rabbit
+  #     - RABBITMQ_DEFAULT_USER=root
+  #     - RABBITMQ_DEFAULT_PASS=secret

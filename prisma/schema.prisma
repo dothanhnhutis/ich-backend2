@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model LinkProvider {
+  id         String @id @default(cuid())
+  providerId String @default("")
+  provider   String @default("credential")
+  userId     String
+  user       User   @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerId])
+  @@index([userId, provider, providerId])
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALER
+  WRITER
+  CUSTOMER
+}
+
+model User {
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  emailVerified            Boolean        @default(false)
+  emailVerificationExpires DateTime? //24h
+  emailVerificationToken   String?        @unique
+  username                 String
+  picture                  String?
+  password                 String?
+  passwordResetToken       String?        @unique
+  passwordResetExpires     DateTime? //4h
+  role                     Role           @default(CUSTOMER)
+  suspended                Boolean        @default(false)
+  inActive                 Boolean        @default(false)
+  activeToken              String?        @unique
+  activeExpires            DateTime? //4h
+  phone                    String?
+  address                  String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  linkProvider             LinkProvider[]
+  posts                    Post[]
+
+  @@index([email, emailVerificationToken, passwordResetToken, activeToken])
+}
+
+// Post Model
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  image       String
+  slug        String   @unique
+  contentJson String
+  contentText String
+  contentHTML String
+  tag         Tag      @relation(fields: [tagId], references: [id])
+  tagId       String
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
+  isActive    Boolean  @default(true)
+  publishAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([title, slug, tagId, authorId])
+}
+
+// Tag Model
+model Tag {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  post      Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name, slug])
+}

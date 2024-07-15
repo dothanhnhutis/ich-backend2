@@ -1,0 +1,9 @@
+tsconfig.json
+.DS_Store
+*.log
+node_modules
+.github
+.changeset
+/src
+docker_volumes
+.env
