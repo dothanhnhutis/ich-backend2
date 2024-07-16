@@ -40,8 +40,8 @@ model User {
   role                     Role           @default(CUSTOMER)
   suspended                Boolean        @default(false)
   inActive                 Boolean        @default(false)
-  activeToken              String?        @unique
-  activeExpires            DateTime? //4h
+  reActiveToken            String?        @unique
+  reActiveExpires          DateTime? //4h
   phone                    String?
   address                  String?
   createdAt                DateTime       @default(now())
@@ -49,7 +49,7 @@ model User {
   linkProvider             LinkProvider[]
   posts                    Post[]
 
-  @@index([email, emailVerificationToken, passwordResetToken, activeToken])
+  @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
 // Post Model

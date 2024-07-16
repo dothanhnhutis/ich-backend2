@@ -7,7 +7,7 @@ export async function createGoogleLink(
   userId: string,
   select?: Prisma.LinkProviderSelect
 ) {
-  return await await prisma.linkProvider.create({
+  return await prisma.linkProvider.create({
     data: {
       provider: "google",
       providerId,

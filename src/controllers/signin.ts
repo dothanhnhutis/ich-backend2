@@ -1,13 +1,19 @@
+import crypto from "crypto";
 import { Request, Response } from "express";
 import { BadRequestError } from "@/error-handler";
 import { compareData } from "@/utils/helper";
 import { StatusCodes } from "http-status-codes";
-import { SignInReq } from "@/schemas/auth";
-import { getUserByEmail } from "@/services/user";
+import { checkEmailSignInReq, SignInReq } from "@/schemas/auth";
+import {
+  createUserWithGoogle,
+  getUserByEmail,
+  GoogleUserInfo,
+  updateUserById,
+} from "@/services/user";
 import configs from "@/configs";
 import { google } from "googleapis";
 import { createGoogleLink, getGoogleProviderById } from "@/services/link";
-import crypto from "crypto";
+import { signJWT } from "@/utils/jwt";
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60000;
 const SUCCESS_REDIRECT = `${configs.CLIENT_URL}/account/profile`;
@@ -60,15 +66,6 @@ export async function signInWithGoogle(
   return res.redirect(url);
 }
 
-type GoogleUserInfo = {
-  id: string;
-  email: string;
-  verified_email: boolean;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string;
-};
 export async function signInWithGoogleCallBack(
   req: Request<{}, {}, {}, { code?: string; error?: string; state: string }>,
   res: Response
@@ -87,11 +84,10 @@ export async function signInWithGoogleCallBack(
     });
 
     const userInfo = (await oauth2.userinfo.get()).data as GoogleUserInfo;
-    let userProvider = await getGoogleProviderById(userInfo.id);
+    let googleProvider = await getGoogleProviderById(userInfo.id);
 
-    if (!userProvider) {
+    if (!googleProvider) {
       const existAccount = await getUserByEmail(userInfo.email);
-
       if (existAccount) {
         return res
           .cookie(
@@ -108,43 +104,71 @@ export async function signInWithGoogleCallBack(
           )
           .redirect(`${configs.CLIENT_URL}/auth/signin`);
       }
-
-      const data: Prisma.UserCreateInput = {
-        email: userInfo.email,
-        emailVerified: userInfo.verified_email,
-        username: userInfo.name,
-        picture: userInfo.picture,
-      };
-      if (!userInfo.verified_email) {
-        const randomBytes: Buffer = await Promise.resolve(
-          crypto.randomBytes(20)
-        );
-        const randomCharacters: string = randomBytes.toString("hex");
-        const date: Date = new Date(Date.now() + 24 * 60 * 60000);
-        data.emailVerificationToken = randomCharacters;
-        data.emailVerificationExpires = date;
-      }
-
-      const user = await prisma.user.create({
-        data,
-      });
-
-      userProvider = await createGoogleLink(userInfo.id, user.id);
+      const user = await createUserWithGoogle(userInfo);
+      googleProvider = await createGoogleLink(userInfo.id, user.id);
     }
 
-    if (userProvider.user.suspended)
+    if (googleProvider.user.suspended)
       throw new BadRequestError(
         "Your account has been locked please contact the administrator"
       );
 
-    if (!userProvider.user.inActive)
+    if (!googleProvider.user.inActive)
       throw new BadRequestError("Your account has been disactivate");
 
     req.session.user = {
-      id: userProvider.user.id,
+      id: googleProvider.user.id,
     };
     req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
 
     return res.redirect(SUCCESS_REDIRECT);
   }
+}
+
+export async function checkEmailSignIn(
+  req: Request<{}, {}, checkEmailSignInReq["body"]>,
+  res: Response
+) {
+  const { email } = req.body;
+  const user = await getUserByEmail(email);
+
+  if (!user)
+    return res.clearCookie(RECOVER_SESSION_NAME).status(StatusCodes.OK).json({
+      message: "You can use this email to register for an account",
+    });
+
+  if (user.inActive)
+    return res.clearCookie(RECOVER_SESSION_NAME).status(StatusCodes.OK).json({
+      message: "Your account is active",
+    });
+
+  const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
+  let randomCharacters = user.activeToken;
+  let date = user.activeExpires;
+  if (
+    !randomCharacters ||
+    randomCharacters == "" ||
+    !date ||
+    date.getTime() <= Date.now()
+  ) {
+    randomCharacters = randomBytes.toString("hex");
+    date = new Date(Date.now() + 5 * 60000);
+    await updateUserById(user.id, {
+      reActiveToken: randomCharacters,
+      reActiveExpires: date,
+    });
+  }
+
+  const token = signJWT(
+    {
+      session: randomCharacters,
+      iat: Math.floor(date.getTime() / 1000),
+    },
+    configs.JWT_SECRET
+  );
+
+  return res
+    .status(StatusCodes.BAD_REQUEST)
+    .cookie(RECOVER_SESSION_NAME, token, { expires: date })
+    .json({ message: "Your account is currently closed" });
 }
