@@ -1,4 +1,5 @@
 import configs from "@/configs";
+import { CreateUserReq, Role } from "@/schemas/user";
 import prisma from "@/utils/db";
 import { hashData } from "@/utils/helper";
 import { signJWT, verifyJWT } from "@/utils/jwt";
@@ -14,7 +15,7 @@ export type GoogleUserInfo = {
   family_name: string;
   picture: string;
 };
-
+// Read
 export const userSelectDefault: Prisma.UserSelect = {
   id: true,
   email: true,
@@ -102,10 +103,75 @@ export async function getUserByToken(
   }
 }
 
+type QueryUserWhereType = {
+  emails?: string[] | undefined;
+  roles?: Role[] | undefined;
+  emailVerified?: boolean | undefined;
+  inActive?: boolean | undefined;
+  suspended?: boolean | undefined;
+};
+
+type QueryUserOrderByType = {
+  email?: "asc" | "desc";
+  role?: "asc" | "desc";
+  emailVerified?: "asc" | "desc";
+  inActive?: "asc" | "desc";
+  suspended?: "asc" | "desc";
+};
+
+type QueryUserType = {
+  where: QueryUserWhereType;
+  limit?: number;
+  page?: number;
+  orderBy?: QueryUserOrderByType[];
+  select?: Prisma.UserSelect;
+};
+
+export async function queueUser(data: QueryUserType) {
+  const take = data?.limit || 10;
+  const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
+  const skip = page * take;
+
+  const where: Prisma.UserWhereInput = {
+    email: {
+      in: data.where.emails,
+    },
+    role: {
+      in: data.where.roles,
+      notIn: ["ADMIN"],
+    },
+    emailVerified: data.where.emailVerified,
+    inActive: data.where.inActive,
+    suspended: data.where.suspended,
+  };
+
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      where: where,
+      select: Prisma.validator<Prisma.UserSelect>()({
+        ...userSelectDefault,
+        ...data.select,
+      }),
+      orderBy: data.orderBy,
+    }),
+    prisma.user.count({ where: where }),
+  ]);
+
+  return {
+    users,
+    metadata: {
+      hasNextPage: skip + take < total,
+      totalPage: Math.ceil(total / take),
+      totalItem: total,
+    },
+  };
+}
+// Create
 export async function createUserWithPassword(data: {
   email: string;
   password: string;
   username: string;
+  role?: CreateUserReq["body"]["role"];
 }) {
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters: string = randomBytes.toString("hex");
@@ -114,6 +180,7 @@ export async function createUserWithPassword(data: {
 
   const user = await prisma.user.create({
     data: {
+      role: data.role || "CUSTOMER",
       email: data.email,
       password: hash,
       username: data.username,
@@ -181,6 +248,7 @@ export async function createUserWithGoogle(googleData: GoogleUserInfo) {
   });
 }
 
+// Update
 type UpdateUserByIdData = {
   password?: string | null;
   passwordResetToken?: string | null;
@@ -191,6 +259,11 @@ type UpdateUserByIdData = {
   inActive?: boolean;
   reActiveExpires?: Date | null;
   reActiveToken?: string | null;
+  picture?: string | null;
+  username?: string;
+  phone?: string | null;
+  address?: string | null;
+  email?: string;
 };
 
 export async function updateUserById(

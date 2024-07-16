@@ -1,10 +1,10 @@
+import prisma from "@/utils/db";
 import { RequestHandler as Middleware } from "express";
 import { PermissionError } from "../error-handler";
-import { UserRole } from "@/schemas/auth.schema";
-import prisma from "@/utils/db";
+import { Role } from "@/schemas/user";
 
 const checkPermission =
-  (roles: UserRole[]): Middleware =>
+  (roles: Role[]): Middleware =>
   async (req, res, next) => {
     const user = await prisma.user.findUnique({
       where: {

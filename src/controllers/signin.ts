@@ -143,8 +143,8 @@ export async function checkEmailSignIn(
     });
 
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
-  let randomCharacters = user.activeToken;
-  let date = user.activeExpires;
+  let randomCharacters = user.reActiveToken;
+  let date = user.reActiveExpires;
   if (
     !randomCharacters ||
     randomCharacters == "" ||
