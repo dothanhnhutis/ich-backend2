@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { parse } from "cookie";
 import { decrypt, encrypt } from "@/utils/helper";
 import { deteleSession, getData, setDataInMilisecond } from "@/redis/cache";
-import { CurrentUser } from "@/schemas/user.schema";
+import { User } from "@/schemas/user";
 
 declare global {
   namespace Express {
@@ -11,7 +11,7 @@ declare global {
       sessionID: string;
       session: SessionData;
       logout: () => Promise<void>;
-      user?: CurrentUser | undefined;
+      user?: User | undefined;
     }
   }
 }

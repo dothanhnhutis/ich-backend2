@@ -11,28 +11,13 @@ const blogBody = z.object({
       invalid_type_error: "title field must be string",
     })
     .min(1, "title field cann't empty"),
-  image: z
-    .string({
-      required_error: "image field is required",
-      invalid_type_error: "image field must be url or image base64",
-    })
-    .superRefine((value, ctx) => {
-      if (value.length == 0) {
-        return ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "image not empty",
-        });
-      }
-
-      if (
-        !z.string().url().safeParse(value).success &&
-        !z.string().regex(base64Regex).safeParse(value).success
-      )
-        return ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "thumnail field must be url or image base64",
-        });
+  image: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("url"), data: z.string().url() }),
+    z.object({
+      type: z.literal("base64"),
+      data: z.string().regex(base64Regex),
     }),
+  ]),
   slug: z
     .string({
       required_error: "slug field is required",
@@ -64,7 +49,7 @@ const blogBody = z.object({
     required_error: "isActive field is required",
     invalid_type_error: "isActive field must be boolean",
   }),
-  publishAt: z.string().datetime("invalid date"),
+  publishAt: z.coerce.date({ message: "invalid date" }),
 });
 
 // export const getBlogSchema = z.object({
