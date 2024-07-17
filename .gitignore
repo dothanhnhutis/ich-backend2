@@ -5,3 +5,4 @@ dist
 pnpm-lock.json
 docker_volumes
 .env
+prisma/migrations

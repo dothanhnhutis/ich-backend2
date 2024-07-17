@@ -17,64 +17,59 @@ import {
 } from "@/schemas/current-user";
 import validateResource from "@/middleware/validateResource";
 import checkPermission from "@/middleware/checkPermission";
-import { createNewUser, searchUser } from "@/controllers/user";
-import { creatUserSchema, searchUserSchema } from "@/schemas/user";
+import {
+  createNewUser,
+  editUserById,
+  getOneUser,
+  searchUser,
+} from "@/controllers/user";
+import {
+  creatUserSchema,
+  editUserSchema,
+  searchUserSchema,
+} from "@/schemas/user";
 
 const router: Router = express.Router();
 function userRouter(): Router {
-  //Current User
-  router.get("/users", authMiddleware(["inActive", "suspended"]), read);
-
+  // User
+  router.get("/users/me", authMiddleware(["inActive", "suspended"]), read);
+  // User
   router.get(
     "/users/resend-email",
     authMiddleware(["inActive", "suspended"]),
     rateLimitSendEmail,
     resendEmail
   );
-
+  // Admin
+  router.get(
+    "/users/_search",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    checkPermission(["ADMIN"]),
+    validateResource(searchUserSchema),
+    searchUser
+  );
+  // Admin
+  router.get(
+    "/users/:id",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    checkPermission(["ADMIN"]),
+    getOneUser
+  );
+  //User
   router.post(
     "/users/change-password",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     validateResource(changePasswordSchema),
     changePassword
   );
-
+  //User
   router.post(
     "/users/picture",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     validateResource(changeAvatarSchema),
     changeAvatar
   );
-
-  router.patch(
-    "/users/deactivate",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
-    deactivate
-  );
-
-  router.patch(
-    "/users",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
-    validateResource(editProfileSchema),
-    editProfile
-  );
-
-  router.patch(
-    "/users/change-email",
-    authMiddleware(["inActive", "suspended"]),
-    changeEmail
-  );
-
-  // User Admin
-
-  router.get(
-    "/users/_search",
-    // authMiddleware(["emailVerified", "inActive", "suspended"]),
-    // checkPermission(["ADMIN"]),
-    validateResource(searchUserSchema),
-    searchUser
-  );
-
+  //Admin
   router.post(
     "/users",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
@@ -82,13 +77,35 @@ function userRouter(): Router {
     validateResource(creatUserSchema),
     createNewUser
   );
-
-  router.get(
+  // User
+  router.patch(
+    "/users/deactivate",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    deactivate
+  );
+  // User
+  router.patch(
+    "/users/change-email",
+    authMiddleware(["inActive", "suspended"]),
+    changeEmail
+  );
+  //Admin
+  router.patch(
     "/users/:id",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN"]),
-    read
+    validateResource(editUserSchema),
+    editUserById
   );
+  // User
+  router.patch(
+    "/users",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    validateResource(editProfileSchema),
+    editProfile
+  );
+
+  // router.get("/users/recover/:token", getUserRecoverToken);
 
   return router;
 }

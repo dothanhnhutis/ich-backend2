@@ -104,8 +104,8 @@ export async function getUserByToken(
 }
 
 type QueryUserWhereType = {
-  emails?: string[] | undefined;
-  roles?: Role[] | undefined;
+  email?: string[] | undefined;
+  role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
   inActive?: boolean | undefined;
   suspended?: boolean | undefined;
@@ -132,17 +132,18 @@ export async function queueUser(data: QueryUserType) {
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
 
+  const { email, role, emailVerified, inActive, suspended } = data.where;
   const where: Prisma.UserWhereInput = {
     email: {
-      in: data.where.emails,
+      in: email,
     },
     role: {
-      in: data.where.roles,
+      in: role,
       notIn: ["ADMIN"],
     },
-    emailVerified: data.where.emailVerified,
-    inActive: data.where.inActive,
-    suspended: data.where.suspended,
+    emailVerified: emailVerified,
+    inActive: inActive,
+    suspended: suspended,
   };
 
   const [users, total] = await prisma.$transaction([
@@ -167,12 +168,15 @@ export async function queueUser(data: QueryUserType) {
   };
 }
 // Create
-export async function createUserWithPassword(data: {
-  email: string;
-  password: string;
-  username: string;
-  role?: CreateUserReq["body"]["role"];
-}) {
+export async function createUserWithPassword(
+  data: {
+    email: string;
+    password: string;
+    username: string;
+    role?: CreateUserReq["body"]["role"];
+  },
+  select?: Prisma.UserSelect
+) {
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters: string = randomBytes.toString("hex");
   const date: Date = new Date(Date.now() + 24 * 60 * 60000);
@@ -187,6 +191,10 @@ export async function createUserWithPassword(data: {
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
     },
+    select: Prisma.validator<Prisma.UserSelect>()({
+      ...userSelectDefault,
+      ...select,
+    }),
   });
   const token = signJWT(
     {

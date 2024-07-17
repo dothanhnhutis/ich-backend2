@@ -1,6 +1,5 @@
-import { Request, RequestHandler as Middleware } from "express";
+import { RequestHandler as Middleware } from "express";
 import { NotAuthorizedError, PermissionError } from "../error-handler";
-import prisma from "@/utils/db";
 import { getUserById } from "@/services/user";
 
 type AuthMiddlewareCheckType = "emailVerified" | "suspended" | "inActive";
@@ -11,9 +10,12 @@ export const authMiddleware =
     if (!req.session.user) {
       throw new NotAuthorizedError();
     }
-
     if (typesCheck) {
-      const user = await getUserById(req.session.user.id);
+      const user = await getUserById(req.session.user.id, {
+        emailVerified: true,
+        inActive: true,
+        suspended: true,
+      });
       if (!user) {
         await req.logout();
         throw new NotAuthorizedError();

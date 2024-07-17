@@ -22,7 +22,7 @@ enum Role {
   ADMIN
   MANAGER
   SALER
-  WRITER
+  BLOGER
   CUSTOMER
 }
 
@@ -47,13 +47,14 @@ model User {
   createdAt                DateTime       @default(now())
   updatedAt                DateTime       @updatedAt
   linkProvider             LinkProvider[]
-  posts                    Post[]
+  blogs                    Blog[]
+  Product                  Product[]
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
-// Post Model
-model Post {
+// Blog Model
+model Blog {
   id          String   @id @default(cuid())
   title       String
   image       String
@@ -78,9 +79,44 @@ model Tag {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
-  post      Post[]
+  blog      Blog[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([name, slug])
+}
+
+// Product Model
+model Product {
+  id          String   @id @default(cuid())
+  images      String[]
+  video       String?
+  productName String
+  slug        String   @unique
+  code        String?  @unique
+  description String
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  benefits    String[]
+  ingredients String[]
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdById String
+  contentJson String
+  contentHTML String
+  contentText String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Category Model
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  product   Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([name, slug])
 }
