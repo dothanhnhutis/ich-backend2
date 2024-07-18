@@ -1,4 +1,5 @@
 import { BadRequestError, PermissionError } from "@/error-handler";
+import tag from "@/routes/tag";
 import { CreateBlogReq, EditBlogReq } from "@/schemas/blog";
 import { Role } from "@/schemas/user";
 import {
@@ -89,7 +90,8 @@ export async function read(req: Request<{ slug: string }>, res: Response) {
 }
 
 export async function searchBlog(req: Request, res: Response) {
-  // const blogs = await prisma
+  console.log(req.body);
+  console.log(req.query);
 
-  return res.status(StatusCodes.OK).json(queryBlog());
+  return res.status(StatusCodes.OK).json(await queryBlog());
 }

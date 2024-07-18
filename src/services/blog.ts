@@ -91,13 +91,19 @@ export async function getBlogBySlug(slug: string, select?: Prisma.BlogSelect) {
 }
 
 type QueryBlogWhereType = {
-  title?: string[] | undefined;
-  slug?: string[] | undefined;
+  title?: string;
+  publishAt?: [Date, Date];
+  contentText?: string;
+  isActive?: boolean;
+  tag?: string[];
+  author?: string[];
 };
 
 type QueryBlogOrderByType = {
   title?: "asc" | "desc";
-  slug?: "asc" | "desc";
+  isActive?: "asc" | "desc";
+  tag?: "asc" | "desc";
+  author?: "asc" | "desc";
 };
 
 type QueryBlogType = {
@@ -112,55 +118,68 @@ export async function queryBlog(data?: QueryBlogType) {
   const take = data?.limit || 10;
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
+  if (data && data.where.publishAt && data.where.publishAt.length != 2) {
+    delete data.where.publishAt;
+  }
 
-  const blogs = await prisma.blog.findMany({
-    where: {
-      tag: {
-        slug: {},
-      },
-    },
-    orderBy: [
-      {
-        tag: {
-          slug: "asc",
+  const where: Prisma.BlogWhereInput = data?.where
+    ? {
+        title: {
+          contains: data.where.title,
         },
-      },
-    ],
-  });
+        publishAt: {
+          gte: data.where.publishAt?.[0],
+          lte: data.where.publishAt?.[1],
+        },
+        isActive: data.where.isActive,
+        // contentText: "",
+        tag: {
+          slug: {
+            in: data.where.tag,
+          },
+        },
+        author: {
+          email: {
+            in: data.where.author,
+          },
+        },
+      }
+    : {};
 
-  return blogs;
+  let OrderByNew = data?.orderBy
+    ?.filter(
+      (d) =>
+        Object.keys(d).length == 1 &&
+        ["title", "isActive", "tag", "author"].includes(Object.keys(d)[0])
+    )
+    .map((d) =>
+      d.tag
+        ? { tag: { name: d.tag } }
+        : d.author
+        ? { author: { username: d.author } }
+        : d
+    ) as Prisma.BlogOrderByWithRelationInput[];
 
-  // const where: Prisma.TagWhereInput = data?.where
-  //   ? {
-  //       name: {
-  //         in: data.where.name,
-  //       },
-  //       slug: {
-  //         in: data.where.slug,
-  //         notIn: ["ADMIN"],
-  //       },
-  //     }
-  //   : {};
-  // const [tags, total] = await prisma.$transaction([
-  //   prisma.tag.findMany({
-  //     where: where,
-  //     select: Prisma.validator<Prisma.TagSelect>()({
-  //       ...tagSelectDefault,
-  //       ...data?.select,
-  //     }),
-  //     orderBy: data?.orderBy,
-  //   }),
-  //   prisma.tag.count({ where: where }),
-  // ]);
+  const [blogs, total] = await prisma.$transaction([
+    prisma.blog.findMany({
+      where: where,
+      select: Prisma.validator<Prisma.BlogSelect>()({
+        ...blogSelectDefault,
+        ...data?.select,
+      }),
+      orderBy: OrderByNew,
+    }),
+    prisma.blog.count({ where: where }),
+  ]);
 
-  // return {
-  //   tags,
-  //   metadata: {
-  //     hasNextPage: skip + take < total,
-  //     totalPage: Math.ceil(total / take),
-  //     totalItem: total,
-  //   },
-  // };
+  return {
+    blogs,
+    metadata: {
+      hasNextPage: skip + take < total,
+      totalPage: Math.ceil(total / take),
+      totalItem: total,
+    },
+  };
 }
 
 // Update

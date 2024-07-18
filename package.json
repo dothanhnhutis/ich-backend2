@@ -21,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@prisma/client": "^5.16.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.2.0",

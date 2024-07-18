@@ -74,15 +74,36 @@ export const editBlogSchema = z.object({
   body: blogBody.strip().partial(),
 });
 
-// export const queryblogSchema = z.object({
-//   query: z
-//     .object({
-//       tag: z.string(),
-//       page: z.string(),
-//     })
-//     .strip()
-//     .partial(),
-// });
+export const queryblogSchema = z.object({
+  body: z
+    .object({
+      title: z.string({ invalid_type_error: "title must be string" }),
+      publishAt: z
+        .array(
+          z.coerce.date({ invalid_type_error: "publishAt item must be date" }),
+          {
+            invalid_type_error: "publishAt item must be array",
+          }
+        )
+        .length(2, { message: "publishAt must be two item" }),
+      content: z.string({ invalid_type_error: "content must be string" }),
+      isActive: z.boolean({ invalid_type_error: "isActive must be boolean" }),
+      tag: z.array(z.string({ invalid_type_error: "tag must be string" }), {
+        invalid_type_error: "tag must be array",
+      }),
+      author: z.array(
+        z.string({ invalid_type_error: "author must be string" }),
+        {
+          invalid_type_error: "author must be array",
+        }
+      ),
+      orderBy: z.array(z.object({})),
+      limit: z.number(),
+      page: z.number(),
+    })
+    .strip()
+    .partial(),
+});
 
 // export type QueryblogReq = z.infer<typeof queryblogSchema>;
 export type CreateBlogReq = z.infer<typeof createBlogSchema>;
