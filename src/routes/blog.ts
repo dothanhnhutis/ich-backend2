@@ -4,7 +4,7 @@ import { authMiddleware } from "@/middleware/requiredAuth";
 import validateResource from "@/middleware/validateResource";
 import { createBlogSchema, queryblogSchema } from "@/schemas/blog";
 import { getBlogBySlug } from "@/services/blog";
-import express, { query, type Router } from "express";
+import express, { type Router } from "express";
 
 const router: Router = express.Router();
 function blogRouter(): Router {

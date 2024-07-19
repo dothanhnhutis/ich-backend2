@@ -80,12 +80,22 @@ export const queryblogSchema = z.object({
       title: z.string({ invalid_type_error: "title must be string" }),
       publishAt: z
         .array(
-          z.coerce.date({ invalid_type_error: "publishAt item must be date" }),
+          z.coerce.date({
+            errorMap: (issue, { defaultError }) => ({
+              message:
+                issue.code === "invalid_date"
+                  ? "publishAt item must be date"
+                  : defaultError,
+            }),
+          }),
           {
-            invalid_type_error: "publishAt item must be array",
+            invalid_type_error: "publishAt must be array",
           }
         )
-        .length(2, { message: "publishAt must be two item" }),
+        .length(2, { message: "publishAt must be two item" })
+        .refine((val) => val[0] <= val[1], {
+          message: "publishAt[0] <= publishAt[1] ",
+        }),
       content: z.string({ invalid_type_error: "content must be string" }),
       isActive: z.boolean({ invalid_type_error: "isActive must be boolean" }),
       tag: z.array(z.string({ invalid_type_error: "tag must be string" }), {
@@ -97,9 +107,48 @@ export const queryblogSchema = z.object({
           invalid_type_error: "author must be array",
         }
       ),
-      orderBy: z.array(z.object({})),
-      limit: z.number(),
-      page: z.number(),
+      orderBy: z.array(
+        z
+          .object({
+            title: z.enum(["asc", "desc"], {
+              message: "orderBy title  must be enum 'asc'|'desc'",
+            }),
+            isActive: z.enum(["asc", "desc"], {
+              message: "orderBy isActive  must be enum 'asc'|'desc'",
+            }),
+            tag: z.enum(["asc", "desc"], {
+              message: "orderBy tag  must be enum 'asc'|'desc'",
+            }),
+            author: z.enum(["asc", "desc"], {
+              message: "orderBy author  must be enum 'asc'|'desc'",
+            }),
+            publishAt: z.enum(["asc", "desc"], {
+              message: "orderBy publishAt  must be enum 'asc'|'desc'",
+            }),
+          })
+          .strip()
+          .partial()
+          .refine(
+            (data) => {
+              const keys = Object.keys(data);
+              return keys.length === 1;
+            },
+            {
+              message:
+                "Each object must have exactly one key, either 'title'|'isActive'|'tag'|'author'|'publishAt'",
+            }
+          )
+      ),
+      limit: z
+        .number({
+          invalid_type_error: "Limit field must be number",
+        })
+        .gte(1, "Limit field should be >= 1"),
+      page: z
+        .number({
+          invalid_type_error: "Page field must be number",
+        })
+        .gte(1, "Page field should be >= 1"),
     })
     .strip()
     .partial(),

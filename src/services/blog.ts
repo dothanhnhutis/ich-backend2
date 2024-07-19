@@ -104,10 +104,11 @@ type QueryBlogOrderByType = {
   isActive?: "asc" | "desc";
   tag?: "asc" | "desc";
   author?: "asc" | "desc";
+  publishAt?: "asc" | "desc";
 };
 
 type QueryBlogType = {
-  where: QueryBlogWhereType;
+  where?: QueryBlogWhereType;
   limit?: number;
   page?: number;
   orderBy?: QueryBlogOrderByType[];
@@ -118,7 +119,7 @@ export async function queryBlog(data?: QueryBlogType) {
   const take = data?.limit || 10;
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
-  if (data && data.where.publishAt && data.where.publishAt.length != 2) {
+  if (data && data.where?.publishAt && data.where.publishAt.length != 2) {
     delete data.where.publishAt;
   }
 
@@ -128,20 +129,16 @@ export async function queryBlog(data?: QueryBlogType) {
           contains: data.where.title,
         },
         publishAt: {
-          gte: data.where.publishAt?.[0],
-          lte: data.where.publishAt?.[1],
+          gte: data.where?.publishAt?.[0],
+          lte: data.where?.publishAt?.[1],
         },
         isActive: data.where.isActive,
         // contentText: "",
-        tag: {
-          slug: {
-            in: data.where.tag,
-          },
+        tagId: {
+          in: data.where.tag,
         },
-        author: {
-          email: {
-            in: data.where.author,
-          },
+        authorId: {
+          in: data.where.author,
         },
       }
     : {};
@@ -164,10 +161,23 @@ export async function queryBlog(data?: QueryBlogType) {
     prisma.blog.findMany({
       where: where,
       select: Prisma.validator<Prisma.BlogSelect>()({
-        ...blogSelectDefault,
-        ...data?.select,
+        // ...blogSelectDefault,
+        // ...data?.select,
+        title: true,
+        tag: true,
       }),
-      orderBy: OrderByNew,
+      orderBy: [
+        {
+          title: "asc",
+        },
+        {
+          tag: {
+            name: "asc",
+          },
+        },
+      ],
+      take,
+      skip,
     }),
     prisma.blog.count({ where: where }),
   ]);

@@ -92,6 +92,13 @@ export async function read(req: Request<{ slug: string }>, res: Response) {
 export async function searchBlog(req: Request, res: Response) {
   console.log(req.body);
   console.log(req.query);
-
-  return res.status(StatusCodes.OK).json(await queryBlog());
+  const { page, limit, orderBy, ...where } = req.body;
+  return res.status(StatusCodes.OK).json(
+    await queryBlog({
+      where,
+      page,
+      limit,
+      orderBy,
+    })
+  );
 }
