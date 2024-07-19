@@ -122,6 +122,7 @@ export async function queryBlog(data?: QueryBlogType) {
   if (data && data.where?.publishAt && data.where.publishAt.length != 2) {
     delete data.where.publishAt;
   }
+  console.log(data?.where?.contentText?.split(" ").join(" | "));
 
   const where: Prisma.BlogWhereInput = data?.where
     ? {
@@ -133,7 +134,7 @@ export async function queryBlog(data?: QueryBlogType) {
           lte: data.where?.publishAt?.[1],
         },
         isActive: data.where.isActive,
-        // contentText: "",
+        contentText: data?.where?.contentText?.split(" ").join(" | "),
         tagId: {
           in: data.where.tag,
         },
@@ -161,21 +162,10 @@ export async function queryBlog(data?: QueryBlogType) {
     prisma.blog.findMany({
       where: where,
       select: Prisma.validator<Prisma.BlogSelect>()({
-        // ...blogSelectDefault,
-        // ...data?.select,
-        title: true,
-        tag: true,
+        ...blogSelectDefault,
+        ...data?.select,
       }),
-      orderBy: [
-        {
-          title: "asc",
-        },
-        {
-          tag: {
-            name: "asc",
-          },
-        },
-      ],
+      orderBy: OrderByNew,
       take,
       skip,
     }),
