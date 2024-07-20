@@ -9,7 +9,7 @@ datasource db {
 }
 
 model LinkProvider {
-  id         String @id @default(cuid())
+  id         String @id @default(uuid())
   providerId String @default("")
   provider   String @default("credential")
   userId     String
@@ -28,7 +28,7 @@ enum Role {
 }
 
 model User {
-  id                       String         @id @default(cuid())
+  id                       String         @id @default(uuid())
   email                    String         @unique
   emailVerified            Boolean        @default(false)
   emailVerificationExpires DateTime? //24h
@@ -47,16 +47,16 @@ model User {
   address                  String?
   createdAt                DateTime       @default(now())
   updatedAt                DateTime       @updatedAt
-  linkProvider             LinkProvider[]
+  linkProviders            LinkProvider[]
   blogs                    Blog[]
-  Product                  Product[]
+  products                 Product[]
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
 // Blog Model
 model Blog {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   title       String
   image       String
   slug        String   @unique
@@ -77,7 +77,7 @@ model Blog {
 
 // Tag Model
 model Tag {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   name      String
   slug      String   @unique
   blog      Blog[]
@@ -89,7 +89,7 @@ model Tag {
 
 // Product Model
 model Product {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   images      String[]
   video       String?
   productName String
@@ -112,7 +112,7 @@ model Product {
 
 // Category Model
 model Category {
-  id        String    @id @default(cuid())
+  id        String    @id @default(uuid())
   name      String
   slug      String    @unique
   product   Product[]

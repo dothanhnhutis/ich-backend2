@@ -1,6 +1,6 @@
 import { BadRequestError, PermissionError } from "@/error-handler";
 import tag from "@/routes/tag";
-import { CreateBlogReq, EditBlogReq } from "@/schemas/blog";
+import { CreateBlogReq, EditBlogReq, QueryBlogReq } from "@/schemas/blog";
 import { Role } from "@/schemas/user";
 import {
   createNewBlog,
@@ -89,13 +89,19 @@ export async function read(req: Request<{ slug: string }>, res: Response) {
   return res.status(StatusCodes.OK).json(await getBlogBySlug(req.params.slug));
 }
 
-export async function searchBlog(req: Request, res: Response) {
+export async function searchBlog(
+  req: Request<{}, {}, QueryBlogReq["body"]>,
+  res: Response
+) {
   console.log(req.body);
   console.log(req.query);
-  const { page, limit, orderBy, ...where } = req.body;
+  const { page, limit, orderBy, content, ...where } = req.body;
   return res.status(StatusCodes.OK).json(
     await queryBlog({
-      where,
+      where: {
+        ...where,
+        contentText: content,
+      },
       page,
       limit,
       orderBy,

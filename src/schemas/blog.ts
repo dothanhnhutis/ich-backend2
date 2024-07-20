@@ -154,6 +154,6 @@ export const queryblogSchema = z.object({
     .partial(),
 });
 
-// export type QueryblogReq = z.infer<typeof queryblogSchema>;
+export type QueryBlogReq = z.infer<typeof queryblogSchema>;
 export type CreateBlogReq = z.infer<typeof createBlogSchema>;
 export type EditBlogReq = z.infer<typeof editBlogSchema>;

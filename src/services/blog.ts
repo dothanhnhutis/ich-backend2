@@ -92,7 +92,7 @@ export async function getBlogBySlug(slug: string, select?: Prisma.BlogSelect) {
 
 type QueryBlogWhereType = {
   title?: string;
-  publishAt?: [Date, Date];
+  publishAt?: Date[];
   contentText?: string;
   isActive?: boolean;
   tag?: string[];
@@ -134,7 +134,9 @@ export async function queryBlog(data?: QueryBlogType) {
           lte: data.where?.publishAt?.[1],
         },
         isActive: data.where.isActive,
-        contentText: data?.where?.contentText?.split(" ").join(" | "),
+        contentText: {
+          search: data?.where?.contentText?.split(" ").join(" | "),
+        },
         tagId: {
           in: data.where.tag,
         },

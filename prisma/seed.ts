@@ -2,12 +2,19 @@ import prisma from "../src/utils/db";
 import { hashData } from "../src/utils/helper";
 import { faker } from "@faker-js/faker";
 async function seed() {
-  await prisma.linkProvider.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.user.deleteMany();
+  // await prisma.linkProvider.deleteMany();
+  // await prisma.user.deleteMany();
+  // await prisma.tag.deleteMany();
+  // await prisma.blog.deleteMany();
 
   const user = await prisma.user.createManyAndReturn({
     data: [
+      {
+        email: "gaconght001@gmail.com",
+        emailVerified: true,
+        password: hashData("@Abc123123"),
+        username: "gaconght001",
+      },
       {
         email: "gaconght002@gmail.com",
         emailVerified: true,
