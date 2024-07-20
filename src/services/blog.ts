@@ -119,10 +119,10 @@ export async function queryBlog(data?: QueryBlogType) {
   const take = data?.limit || 10;
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
+
   if (data && data.where?.publishAt && data.where.publishAt.length != 2) {
     delete data.where.publishAt;
   }
-  console.log(data?.where?.contentText?.split(" ").join(" | "));
 
   const where: Prisma.BlogWhereInput = data?.where
     ? {

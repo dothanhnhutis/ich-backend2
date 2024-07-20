@@ -78,6 +78,7 @@ export async function queryTag(data?: QueryTagType) {
         },
       }
     : {};
+
   const [tags, total] = await prisma.$transaction([
     prisma.tag.findMany({
       where: where,
@@ -86,6 +87,8 @@ export async function queryTag(data?: QueryTagType) {
         ...data?.select,
       }),
       orderBy: data?.orderBy,
+      take,
+      skip,
     }),
     prisma.tag.count({ where: where }),
   ]);

@@ -90,12 +90,11 @@ export async function read(req: Request<{ slug: string }>, res: Response) {
 }
 
 export async function searchBlog(
-  req: Request<{}, {}, QueryBlogReq["body"]>,
+  req: Request<{}, {}, QueryBlogReq["body"], QueryBlogReq["query"]>,
   res: Response
 ) {
-  console.log(req.body);
-  console.log(req.query);
-  const { page, limit, orderBy, content, ...where } = req.body;
+  const { page, limit, orderBy, content, ...where } =
+    req.body || req.query || {};
   return res.status(StatusCodes.OK).json(
     await queryBlog({
       where: {

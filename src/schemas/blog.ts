@@ -3,6 +3,11 @@ const MAX_FILE_SIZE = 5000000;
 
 export const base64Regex =
   /^data:image\/(?:png|gif|png|jpg|jpeg|bmp|webp)(?:;charset=utf-8)?;base64,(?:[A-Za-z0-9]|[+/])+={0,2}/g;
+const trueFalseRegex = /^(0|1|true|false)$/;
+const orderByRegex =
+  /^((title|isActive|tag|author|publishAt)\.(asc|desc)\,)*?(title|isActive|tag|author|publishAt)\.(asc|desc)$/;
+const dateRegex =
+  /^(([1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d{1}|3[0-1]))T([0-5]\d:[0-5]\d:[0-5]\d).\d{3}Z),(([1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d{1}|3[0-1]))T([0-5]\d:[0-5]\d:[0-5]\d).\d{3}Z)$/;
 
 const blogBody = z.object({
   title: z
@@ -52,16 +57,6 @@ const blogBody = z.object({
   publishAt: z.coerce.date({ message: "invalid date" }),
 });
 
-// export const getBlogSchema = z.object({
-//   query: z
-//     .object({
-//       title: z.string().optional(),
-//       tagName: z.string().optional(),
-//       authorName: z.string().optional(),
-//     })
-//     .optional(),
-// });
-
 export const createBlogSchema = z.object({
   body: blogBody.strict(),
 });
@@ -75,6 +70,133 @@ export const editBlogSchema = z.object({
 });
 
 export const queryblogSchema = z.object({
+  query: z
+    .object({
+      title: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val, _ctx) =>
+          Array.isArray(val) ? val.reverse()[0] : val
+        ),
+      publishAt: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val, _ctx) => {
+          if (Array.isArray(val)) {
+            if (
+              val.length != 2 ||
+              val.some((v) => !z.coerce.date().safeParse(v).success) ||
+              new Date(val[0]) > new Date(val[1])
+            )
+              return undefined;
+            return val.map((val) => new Date(val));
+          } else {
+            if (dateRegex.test(val)) {
+              const result = val.split(",").map((val) => new Date(val));
+              if (
+                result.some((v) => !z.coerce.date().safeParse(v).success) ||
+                result[0] > result[1]
+              )
+                return undefined;
+              return result;
+            } else {
+              return undefined;
+            }
+          }
+        }),
+      content: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val, _ctx) =>
+          Array.isArray(val) ? val.reverse()[0] : val
+        ),
+      isActive: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((isActive) => {
+          if (Array.isArray(isActive)) {
+            const hasSuspended = isActive
+              .filter((val) => trueFalseRegex.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return hasSuspended
+              ? hasSuspended == "1" || hasSuspended == "true"
+              : undefined;
+          } else {
+            return trueFalseRegex.test(isActive)
+              ? isActive == "1" || isActive == "true"
+              : undefined;
+          }
+        }),
+      tag: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val : val.split(","))),
+      author: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val : val.split(","))),
+      orderBy: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => {
+          if (Array.isArray(val)) {
+            const tmp = val.filter((val) => orderByRegex.test(val));
+            return tmp.length == 0
+              ? undefined
+              : tmp
+                  .join(",")
+                  .split(",")
+                  .filter((val, index, arr) => arr.indexOf(val) === index)
+                  .map((or) => or.split(".").slice(0, 3))
+                  .map(([key, value]) => ({ [key]: value as "asc" | "desc" }));
+          } else {
+            return orderByRegex.test(val)
+              ? val
+                  .split(",")
+                  .map((or) => or.split(".").slice(0, 3))
+                  .map(([key, value]) => ({ [key]: value as "asc" | "desc" }))
+              : undefined;
+          }
+        }),
+      page: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => {
+          if (Array.isArray(val)) {
+            const hasPage = val
+              .filter((val) => /^[1-9][0-9]*?$/.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return parseInt(hasPage);
+          } else {
+            return /^[1-9][0-9]*?$/.test(val) ? parseInt(val) : undefined;
+          }
+        }),
+      limit: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((limit) => {
+          if (Array.isArray(limit)) {
+            const hasLimit = limit
+              .filter((val) => /^[1-9][0-9]*?$/.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return parseInt(hasLimit);
+          } else {
+            return /^[1-9][0-9]*?$/.test(limit) ? parseInt(limit) : undefined;
+          }
+        }),
+    })
+    .strip()
+    .partial()
+    .transform((val) => {
+      for (let key of Object.keys(val)) {
+        if (val[key as keyof typeof val] == undefined)
+          delete val[key as keyof typeof val];
+      }
+      return Object.keys(val).length == 0 ? undefined : val;
+    }),
   body: z
     .object({
       title: z.string({ invalid_type_error: "title must be string" }),
@@ -151,7 +273,8 @@ export const queryblogSchema = z.object({
         .gte(1, "Page field should be >= 1"),
     })
     .strip()
-    .partial(),
+    .partial()
+    .transform((val) => (Object.keys(val).length == 0 ? undefined : val)),
 });
 
 export type QueryBlogReq = z.infer<typeof queryblogSchema>;
