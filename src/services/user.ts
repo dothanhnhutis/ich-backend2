@@ -127,35 +127,46 @@ type QueryUserType = {
   select?: Prisma.UserSelect;
 };
 
-export async function queueUser(data: QueryUserType) {
+export async function queueUser(data?: QueryUserType) {
   const take = data?.limit || 10;
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
 
-  const { email, role, emailVerified, inActive, suspended } = data.where;
-  const where: Prisma.UserWhereInput = {
-    email: {
-      in: email,
-    },
-    role: {
-      in: role,
-      notIn: ["ADMIN"],
-    },
-    emailVerified: emailVerified,
-    inActive: inActive,
-    suspended: suspended,
+  let args: Prisma.UserFindManyArgs = {
+    where: {},
+    select: Prisma.validator<Prisma.UserSelect>()({
+      ...userSelectDefault,
+    }),
+    take,
+    skip,
   };
-
-  const [users, total] = await prisma.$transaction([
-    prisma.user.findMany({
-      where: where,
+  if (data) {
+    const { email, role, emailVerified, inActive, suspended } = data.where;
+    args = {
+      ...args,
+      where: {
+        email: {
+          in: email,
+        },
+        role: {
+          in: role,
+          notIn: ["ADMIN"],
+        },
+        emailVerified: emailVerified,
+        inActive: inActive,
+        suspended: suspended,
+      },
       select: Prisma.validator<Prisma.UserSelect>()({
         ...userSelectDefault,
         ...data.select,
       }),
       orderBy: data.orderBy,
-    }),
-    prisma.user.count({ where: where }),
+    };
+  }
+
+  const [users, total] = await prisma.$transaction([
+    prisma.user.findMany(args),
+    prisma.user.count({ where: args.where }),
   ]);
 
   return {

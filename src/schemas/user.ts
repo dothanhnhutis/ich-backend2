@@ -183,31 +183,11 @@ export const searchUserSchema = z.object({
     .strip()
     .partial()
     .transform((val) => {
-      if (!val.email || val.email.length == 0) {
-        delete val.email;
+      for (let key of Object.keys(val)) {
+        if (val[key as keyof typeof val] == undefined)
+          delete val[key as keyof typeof val];
       }
-      if (!val.role || val.role.length == 0) {
-        delete val.role;
-      }
-      if (!val.emailVerified) {
-        delete val.emailVerified;
-      }
-      if (!val.inActive) {
-        delete val.inActive;
-      }
-      if (!val.suspended) {
-        delete val.suspended;
-      }
-      if (!val.orderBy || val.orderBy.length == 0) {
-        delete val.orderBy;
-      }
-      if (!val.page) {
-        delete val.page;
-      }
-      if (!val.limit) {
-        delete val.limit;
-      }
-      return val;
+      return Object.keys(val).length == 0 ? undefined : val;
     }),
   body: z
     .object({
@@ -270,7 +250,8 @@ export const searchUserSchema = z.object({
         .gte(1, "Limit field should be >= 1"),
     })
     .strip()
-    .partial(),
+    .partial()
+    .transform((val) => (Object.keys(val).length == 0 ? undefined : val)),
 });
 
 export const editUserSchema = z.object({

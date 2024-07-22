@@ -123,19 +123,29 @@ export async function queryBlog(data?: QueryBlogType) {
   if (data && data.where?.publishAt && data.where.publishAt.length != 2) {
     delete data.where.publishAt;
   }
-
-  const where: Prisma.BlogWhereInput = data?.where
-    ? {
+  let args: Prisma.BlogFindManyArgs = {
+    select: Prisma.validator<Prisma.BlogSelect>()({
+      ...blogSelectDefault,
+    }),
+    take,
+    skip,
+  };
+  if (data) {
+    if (data.where) {
+      args.where = {
         title: {
           contains: data.where.title,
         },
-        publishAt: {
-          gte: data.where?.publishAt?.[0],
-          lte: data.where?.publishAt?.[1],
-        },
+        publishAt:
+          data.where.publishAt && data.where.publishAt.length == 2
+            ? {
+                gte: data.where.publishAt[0],
+                lte: data.where.publishAt[1],
+              }
+            : undefined,
         isActive: data.where.isActive,
         contentText: {
-          search: data?.where?.contentText?.split(" ").join(" | "),
+          search: data.where.contentText?.split(" ").join(" | "),
         },
         tagId: {
           in: data.where.tag,
@@ -143,35 +153,28 @@ export async function queryBlog(data?: QueryBlogType) {
         authorId: {
           in: data.where.author,
         },
-      }
-    : {};
-
-  let OrderByNew = data?.orderBy
-    ?.filter(
-      (d) =>
-        Object.keys(d).length == 1 &&
-        ["title", "isActive", "tag", "author"].includes(Object.keys(d)[0])
-    )
-    .map((d) =>
-      d.tag
-        ? { tag: { name: d.tag } }
-        : d.author
-        ? { author: { username: d.author } }
-        : d
-    ) as Prisma.BlogOrderByWithRelationInput[];
+      };
+    }
+    if (data.orderBy) {
+      args.orderBy = data.orderBy
+        .filter(
+          (d) =>
+            Object.keys(d).length == 1 &&
+            ["title", "isActive", "tag", "author"].includes(Object.keys(d)[0])
+        )
+        .map((d) =>
+          d.tag
+            ? { tag: { name: d.tag } }
+            : d.author
+            ? { author: { username: d.author } }
+            : d
+        ) as Prisma.BlogOrderByWithRelationInput[];
+    }
+  }
 
   const [blogs, total] = await prisma.$transaction([
-    prisma.blog.findMany({
-      where: where,
-      select: Prisma.validator<Prisma.BlogSelect>()({
-        ...blogSelectDefault,
-        ...data?.select,
-      }),
-      orderBy: OrderByNew,
-      take,
-      skip,
-    }),
-    prisma.blog.count({ where: where }),
+    prisma.blog.findMany(args),
+    prisma.blog.count({ where: args.where }),
   ]);
 
   return {

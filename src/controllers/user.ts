@@ -15,17 +15,15 @@ export async function searchUser(
   req: Request<{}, {}, SearchUserReq["body"], SearchUserReq["query"]>,
   res: Response
 ) {
-  const { page, limit, orderBy, ...props } =
-    Object.keys(req.body).length > 0 ? req.body : req.query;
-
-  const user = await queueUser({
-    where: props,
-    page,
-    limit,
-    orderBy,
-  });
-
-  return res.status(StatusCodes.OK).json(user);
+  const { page, limit, orderBy, ...props } = req.body || req.query || {};
+  return res.status(StatusCodes.OK).json(
+    await queueUser({
+      where: props,
+      page,
+      limit,
+      orderBy,
+    })
+  );
 }
 
 export async function createNewUser(

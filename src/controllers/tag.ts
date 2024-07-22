@@ -1,4 +1,4 @@
-import { BadRequestError } from "@/error-handler";
+import { BadRequestError, NotFoundError } from "@/error-handler";
 import { CreateTagReq, EditTagReq } from "@/schemas/tag";
 import {
   createNewTag,
@@ -18,6 +18,7 @@ export async function getAllTag(req: Request, res: Response) {
 
 export async function read(req: Request<{ id: string }>, res: Response) {
   const tag = await getTagById(req.params.id);
+  if (!tag) throw new NotFoundError();
   return res.status(StatusCodes.OK).json(tag);
 }
 
