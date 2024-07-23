@@ -23,17 +23,21 @@ export async function getAllImageCloudinary() {
   return images;
 }
 
-export async function uploadImageCloudinary(base64: string) {
+export async function uploadImageCloudinary(
+  base64: string,
+  opts?: UploadApiOptions
+) {
   if (!isBase64Data(base64))
     throw new BadRequestError("image upload must be base64 string");
   const options: UploadApiOptions = {
-    resource_type: "image",
     use_filename: true,
     unique_filename: false,
     overwrite: true,
-    // transformation: [{ width: 1000, height: 752, crop: "scale" }],
     folder: "ich",
+    resource_type: "image",
+    // transformation: [{ width: 640, height: 640, crop: "scale" }],
     tags: ["avatar"],
+    ...opts,
   };
   const { public_id, asset_id, width, height, secure_url, tags } =
     await cloudinary.uploader.upload(base64, options);

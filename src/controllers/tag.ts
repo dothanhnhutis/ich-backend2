@@ -1,8 +1,9 @@
 import { BadRequestError, NotFoundError } from "@/error-handler";
-import { CreateTagReq, EditTagReq } from "@/schemas/tag";
+import { CreateTagReq, EditTagReq, SearchTagReq } from "@/schemas/tag";
 import {
   createNewTag,
   deleteTagById,
+  getAllTag,
   getTagById,
   getTagBySlug,
   queryTag,
@@ -11,8 +12,23 @@ import {
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-export async function getAllTag(req: Request, res: Response) {
-  const tags = await queryTag();
+export async function searchTag(
+  req: Request<{}, {}, SearchTagReq["body"], SearchTagReq["query"]>,
+  res: Response
+) {
+  const { page, limit, orderBy, ...where } = req.body || req.query || {};
+  return res.status(StatusCodes.OK).send(
+    await queryTag({
+      where,
+      orderBy,
+      limit,
+      page,
+    })
+  );
+}
+
+export async function readAllTag(req: Request, res: Response) {
+  const tags = await getAllTag();
   return res.status(StatusCodes.OK).send(tags);
 }
 
@@ -35,7 +51,7 @@ export async function create(
     .json({ message: "create tag success", tag: newTag });
 }
 
-export async function editTag(
+export async function updateTag(
   req: Request<EditTagReq["params"], {}, EditTagReq["body"]>,
   res: Response
 ) {

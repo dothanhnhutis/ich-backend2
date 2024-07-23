@@ -26,7 +26,7 @@ function categoryRouter(): Router {
     search
   );
   router.get("/categories/:id", read);
-  router.get("/tags", readAll);
+  router.get("/categories", readAll);
   router.post(
     "/categories",
     authMiddleware(["emailVerified", "inActive", "suspended"]),

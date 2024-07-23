@@ -200,7 +200,9 @@ export async function updateBlogById(
   };
   if (image) {
     if (image.type == "base64") {
-      const { secure_url } = await uploadImageCloudinary(image.data);
+      const { secure_url } = await uploadImageCloudinary(image.data, {
+        tags: ["blog", id],
+      });
       newData.image = secure_url;
     } else {
       newData.image = image.data;

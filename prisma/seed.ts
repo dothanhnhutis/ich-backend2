@@ -2,10 +2,12 @@ import prisma from "../src/utils/db";
 import { hashData } from "../src/utils/helper";
 import { faker } from "@faker-js/faker";
 async function seed() {
-  // await prisma.linkProvider.deleteMany();
-  // await prisma.user.deleteMany();
-  // await prisma.tag.deleteMany();
-  // await prisma.blog.deleteMany();
+  await prisma.linkProvider.deleteMany();
+  await prisma.blog.deleteMany();
+  await prisma.tag.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.user.deleteMany();
 
   const user = await prisma.user.createManyAndReturn({
     data: [
@@ -48,6 +50,26 @@ async function seed() {
       tagId: tags[0].id,
       publishAt: faker.date.past(),
       slug: `Nha-May-Gia-Cong-So-1-Mien-Tay-${index}`,
+    })),
+  });
+
+  const categories = await prisma.category.createManyAndReturn({
+    data: Array.from({ length: 10 }, (_, index) => ({
+      name: `Lam dep ${index}`,
+      slug: `lam-dep-${index}`,
+    })),
+  });
+
+  await prisma.product.createMany({
+    data: Array.from({ length: 15 }, (_, index) => ({
+      categoryId: categories[0].id,
+      description: "asdasd",
+      productName: "Kem rau ma",
+      createdById: user[0].id,
+      contentText: "",
+      contentHTML: "<p></p>",
+      contentJson: "",
+      slug: `Kem-rau-ma-${index}`,
     })),
   });
 }

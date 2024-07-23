@@ -24,6 +24,15 @@ export async function createNewTag(
 }
 
 // Read
+export async function getAllTag(select?: Prisma.TagSelect) {
+  return await prisma.tag.findMany({
+    select: Prisma.validator<Prisma.TagSelect>()({
+      ...tagSelectDefault,
+      ...select,
+    }),
+  });
+}
+
 export async function getTagById(id: string, select?: Prisma.TagSelect) {
   return await prisma.tag.findUnique({
     where: { id },
@@ -45,17 +54,16 @@ export async function getTagBySlug(slug: string, select?: Prisma.TagSelect) {
 }
 
 type QueryTagWhereType = {
-  name?: string[] | undefined;
-  slug?: string[] | undefined;
+  id?: string[] | undefined;
+  name?: string | undefined;
 };
 
 type QueryTagOrderByType = {
   name?: "asc" | "desc";
-  slug?: "asc" | "desc";
 };
 
 type QueryTagType = {
-  where: QueryTagWhereType;
+  where?: QueryTagWhereType;
   limit?: number;
   page?: number;
   orderBy?: QueryTagOrderByType[];
@@ -67,30 +75,37 @@ export async function queryTag(data?: QueryTagType) {
   const page = (!data?.page || data.page <= 0 ? 1 : data.page) - 1;
   const skip = page * take;
 
-  const where: Prisma.TagWhereInput = data?.where
-    ? {
-        name: {
-          in: data.where.name,
-        },
-        slug: {
-          in: data.where.slug,
-          notIn: ["ADMIN"],
-        },
-      }
-    : {};
+  const args: Prisma.TagFindManyArgs = {
+    select: Prisma.validator<Prisma.TagSelect>()({
+      ...tagSelectDefault,
+    }),
+    take,
+    skip,
+  };
+
+  if (data?.select) {
+    args.select = Prisma.validator<Prisma.TagSelect>()({
+      ...tagSelectDefault,
+      ...data?.select,
+    });
+  }
+  if (data?.where) {
+    args.where = {
+      id: {
+        in: data.where.id,
+      },
+      name: {
+        contains: data.where.name,
+      },
+    };
+  }
+  if (data?.orderBy) {
+    args.orderBy = data.orderBy;
+  }
 
   const [tags, total] = await prisma.$transaction([
-    prisma.tag.findMany({
-      where: where,
-      select: Prisma.validator<Prisma.TagSelect>()({
-        ...tagSelectDefault,
-        ...data?.select,
-      }),
-      orderBy: data?.orderBy,
-      take,
-      skip,
-    }),
-    prisma.tag.count({ where: where }),
+    prisma.tag.findMany(args),
+    prisma.tag.count({ where: args.where }),
   ]);
 
   return {

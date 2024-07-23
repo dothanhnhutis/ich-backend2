@@ -1,18 +1,32 @@
-import { create, deleteTag, editTag, getAllTag, read } from "@/controllers/tag";
+import {
+  create,
+  deleteTag,
+  read,
+  readAllTag,
+  searchTag,
+  updateTag,
+} from "@/controllers/tag";
 import checkPermission from "@/middleware/checkPermission";
 import { authMiddleware } from "@/middleware/requiredAuth";
 import validateResource from "@/middleware/validateResource";
-import { createTagSchema, editTagSchema } from "@/schemas/tag";
+import { createTagSchema, editTagSchema, searchTagSchema } from "@/schemas/tag";
 import express, { type Router } from "express";
 
 const router: Router = express.Router();
 function tagRouter(): Router {
+  router.get(
+    "/tags/_search",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    checkPermission(["ADMIN", "MANAGER"]),
+    validateResource(searchTagSchema),
+    searchTag
+  );
   router.patch(
     "/tags/:id",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editTagSchema),
-    editTag
+    updateTag
   );
   router.delete(
     "/tags/:id",
@@ -28,7 +42,7 @@ function tagRouter(): Router {
     validateResource(createTagSchema),
     create
   );
-  router.get("/tags", getAllTag);
+  router.get("/tags", readAllTag);
   return router;
 }
 

@@ -231,23 +231,26 @@ export const queryblogSchema = z.object({
       ),
       orderBy: z.array(
         z
-          .object({
-            title: z.enum(["asc", "desc"], {
-              message: "orderBy title  must be enum 'asc'|'desc'",
-            }),
-            isActive: z.enum(["asc", "desc"], {
-              message: "orderBy isActive  must be enum 'asc'|'desc'",
-            }),
-            tag: z.enum(["asc", "desc"], {
-              message: "orderBy tag  must be enum 'asc'|'desc'",
-            }),
-            author: z.enum(["asc", "desc"], {
-              message: "orderBy author  must be enum 'asc'|'desc'",
-            }),
-            publishAt: z.enum(["asc", "desc"], {
-              message: "orderBy publishAt  must be enum 'asc'|'desc'",
-            }),
-          })
+          .object(
+            {
+              title: z.enum(["asc", "desc"], {
+                message: "orderBy title  must be enum 'asc'|'desc'",
+              }),
+              isActive: z.enum(["asc", "desc"], {
+                message: "orderBy isActive  must be enum 'asc'|'desc'",
+              }),
+              tag: z.enum(["asc", "desc"], {
+                message: "orderBy tag  must be enum 'asc'|'desc'",
+              }),
+              author: z.enum(["asc", "desc"], {
+                message: "orderBy author  must be enum 'asc'|'desc'",
+              }),
+              publishAt: z.enum(["asc", "desc"], {
+                message: "orderBy publishAt  must be enum 'asc'|'desc'",
+              }),
+            },
+            { invalid_type_error: "orderBy must be array object" }
+          )
           .strip()
           .partial()
           .refine(
@@ -259,7 +262,10 @@ export const queryblogSchema = z.object({
               message:
                 "Each object must have exactly one key, either 'title'|'isActive'|'tag'|'author'|'publishAt'",
             }
-          )
+          ),
+        {
+          invalid_type_error: "orderBy must be array",
+        }
       ),
       limit: z
         .number({

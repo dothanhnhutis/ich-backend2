@@ -1,11 +1,16 @@
 import { BadRequestError, NotFoundError } from "@/error-handler";
-import { CreateCategoryReq, EditCategoryReq } from "@/schemas/category";
+import {
+  CreateCategoryReq,
+  EditCategoryReq,
+  SearchCategoryReq,
+} from "@/schemas/category";
 import {
   createCategory,
   deleteCategoryById,
   getAllCategory,
   getCategoryById,
   getCategoryBySlug,
+  queryCategories,
   updateCategoryById,
 } from "@/services/category";
 import { Request, Response } from "express";
@@ -21,9 +26,19 @@ export async function readAll(req: Request, res: Response) {
   return res.status(StatusCodes.OK).json(await getAllCategory());
 }
 
-export async function search(req: Request, res: Response) {
-  console.log(req.body);
-  return res.status(StatusCodes.OK).send("Server health check oker");
+export async function search(
+  req: Request<{}, {}, SearchCategoryReq["body"], SearchCategoryReq["query"]>,
+  res: Response
+) {
+  const { page, limit, orderBy, ...where } = req.body || req.query || {};
+  return res.status(StatusCodes.OK).json(
+    await queryCategories({
+      where,
+      orderBy,
+      limit,
+      page,
+    })
+  );
 }
 
 export async function create(

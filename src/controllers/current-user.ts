@@ -97,8 +97,10 @@ export async function changeAvatar(
   const { type, data } = req.body;
   let url: string;
   if (type == "base64" && isBase64Data(data)) {
-    const { asset_id, height, public_id, secure_url, tags, width } =
-      await uploadImageCloudinary(data);
+    const { secure_url } = await uploadImageCloudinary(data, {
+      transformation: [{ width: 640, height: 640, crop: "scale" }],
+      tags: ["avatar", id],
+    });
     url = secure_url;
   } else if (type == "url" && z.string().url().safeParse(data).success) {
     url = data;

@@ -32,13 +32,12 @@ export async function getAllCategory(select?: Prisma.CategorySelect) {
 }
 
 type QueryCategoryWhereType = {
-  name?: string[] | undefined;
-  slug?: string[] | undefined;
+  name?: string | undefined;
+  id?: string[] | undefined;
 };
 
 type QueryCategoryOrderByType = {
   name?: "asc" | "desc";
-  slug?: "asc" | "desc";
 };
 
 type QueryCategoryType = {
@@ -64,9 +63,9 @@ export async function queryCategories(data?: QueryCategoryType) {
   };
   if (data?.where) {
     args.where = {
-      name: { in: data.where.name },
-      slug: {
-        in: data.where.slug,
+      name: { contains: data.where.name },
+      id: {
+        in: data.where.id,
       },
     };
   }
