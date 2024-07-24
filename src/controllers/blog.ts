@@ -1,5 +1,4 @@
 import { BadRequestError, PermissionError } from "@/error-handler";
-import tag from "@/routes/tag";
 import { CreateBlogReq, EditBlogReq, QueryBlogReq } from "@/schemas/blog";
 import { Role } from "@/schemas/user";
 import {
@@ -14,7 +13,7 @@ import { getUserById } from "@/services/user";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-export async function create(
+export async function createBlog(
   req: Request<{}, {}, CreateBlogReq["body"]>,
   res: Response
 ) {
@@ -36,7 +35,7 @@ export async function create(
     .send({ message: "create blog success" });
 }
 
-export async function update(
+export async function updateBlog(
   req: Request<EditBlogReq["params"], {}, EditBlogReq["body"]>,
   res: Response
 ) {
@@ -85,7 +84,7 @@ export async function update(
   return res.send({ message: "update blog success" });
 }
 
-export async function read(req: Request<{ slug: string }>, res: Response) {
+export async function readBlog(req: Request<{ slug: string }>, res: Response) {
   return res.status(StatusCodes.OK).json(await getBlogBySlug(req.params.slug));
 }
 
@@ -93,17 +92,13 @@ export async function searchBlog(
   req: Request<{}, {}, QueryBlogReq["body"], QueryBlogReq["query"]>,
   res: Response
 ) {
-  const { page, limit, orderBy, content, ...where } =
-    req.body || req.query || {};
+  const { page, limit, order_by, ...where } = req.body || req.query || {};
   return res.status(StatusCodes.OK).json(
     await queryBlog({
-      where: {
-        ...where,
-        contentText: content,
-      },
+      where,
       page,
       limit,
-      orderBy,
+      order_by,
     })
   );
 }

@@ -5,8 +5,8 @@ import {
   SearchCategoryReq,
 } from "@/schemas/category";
 import {
-  createCategory,
-  deleteCategoryById,
+  createNewCategory,
+  removeCategoryById,
   getAllCategory,
   getCategoryById,
   getCategoryBySlug,
@@ -16,46 +16,49 @@ import {
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-export async function read(req: Request<{ id: string }>, res: Response) {
+export async function readCategory(
+  req: Request<{ id: string }>,
+  res: Response
+) {
   const category = await getCategoryById(req.params.id);
   if (!category) throw new NotFoundError();
   return res.status(StatusCodes.OK).json(category);
 }
 
-export async function readAll(req: Request, res: Response) {
+export async function readAllCategory(req: Request, res: Response) {
   return res.status(StatusCodes.OK).json(await getAllCategory());
 }
 
-export async function search(
+export async function searchCategory(
   req: Request<{}, {}, SearchCategoryReq["body"], SearchCategoryReq["query"]>,
   res: Response
 ) {
-  const { page, limit, orderBy, ...where } = req.body || req.query || {};
+  const { page, limit, order_by, ...where } = req.body || req.query || {};
   return res.status(StatusCodes.OK).json(
     await queryCategories({
       where,
-      orderBy,
+      order_by,
       limit,
       page,
     })
   );
 }
 
-export async function create(
+export async function createCategory(
   req: Request<{}, {}, CreateCategoryReq["body"]>,
   res: Response
 ) {
   const { name, slug } = req.body;
   const category = await getCategoryBySlug(slug);
   if (category) throw new BadRequestError("slug already exists");
-  const newCategory = await createCategory({ name, slug });
+  const newCategory = await createNewCategory({ name, slug });
   return res.status(StatusCodes.CREATED).json({
     message: "create category success",
     category: newCategory,
   });
 }
 
-export async function edit(
+export async function editCategory(
   req: Request<EditCategoryReq["params"], {}, EditCategoryReq["body"]>,
   res: Response
 ) {
@@ -70,13 +73,13 @@ export async function edit(
     if (slugExist) throw new BadRequestError("slug already exists");
   }
   const newCategory = await updateCategoryById(id, req.body);
-  return res.status(200).json({
+  return res.status(StatusCodes.OK).json({
     message: "update category success",
     category: newCategory,
   });
 }
 
-export async function remove(req: Request, res: Response) {
+export async function deleteCategory(req: Request, res: Response) {
   const { id } = req.params;
   const category = await getCategoryById(id, {
     _count: {
@@ -85,9 +88,9 @@ export async function remove(req: Request, res: Response) {
   });
   if (!category) throw new NotFoundError();
   if (category._count.product > 0)
-    throw new BadRequestError("Category đã được sử dụng");
-  const deleteCategory = await deleteCategoryById(id);
-  return res.status(200).json({
+    throw new BadRequestError("category is being used by product");
+  const deleteCategory = await removeCategoryById(id);
+  return res.status(StatusCodes.OK).json({
     message: "delete category success",
     category: deleteCategory,
   });

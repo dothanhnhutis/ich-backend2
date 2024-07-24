@@ -36,7 +36,7 @@ export async function uploadImageCloudinary(
     folder: "ich",
     resource_type: "image",
     // transformation: [{ width: 640, height: 640, crop: "scale" }],
-    tags: ["avatar"],
+    tags: ["no-tag"],
     ...opts,
   };
   const { public_id, asset_id, width, height, secure_url, tags } =

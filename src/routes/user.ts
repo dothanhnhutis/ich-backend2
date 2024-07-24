@@ -1,22 +1,22 @@
 import express, { type Router } from "express";
 import { authMiddleware } from "@/middleware/requiredAuth";
+import { rateLimitSendEmail } from "@/middleware/rateLimit";
+import validateResource from "@/middleware/validateResource";
+import checkPermission from "@/middleware/checkPermission";
 import {
   changeAvatar,
   changeEmail,
   changePassword,
   deactivate,
   editProfile,
-  read,
+  currentUser,
   resendEmail,
 } from "@/controllers/current-user";
-import { rateLimitSendEmail } from "@/middleware/rateLimit";
 import {
   changeAvatarSchema,
   changePasswordSchema,
   editProfileSchema,
 } from "@/schemas/current-user";
-import validateResource from "@/middleware/validateResource";
-import checkPermission from "@/middleware/checkPermission";
 import {
   createNewUser,
   editUserById,
@@ -32,7 +32,11 @@ import {
 const router: Router = express.Router();
 function userRouter(): Router {
   // User
-  router.get("/users/me", authMiddleware(["inActive", "suspended"]), read);
+  router.get(
+    "/users/me",
+    authMiddleware(["inActive", "suspended"]),
+    currentUser
+  );
   // User
   router.get(
     "/users/resend-email",

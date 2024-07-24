@@ -1,7 +1,7 @@
 import {
   createProduct,
   editProduct,
-  readOneProduct,
+  readProduct,
   searchProduct,
 } from "@/controllers/product";
 import checkPermission from "@/middleware/checkPermission";
@@ -36,7 +36,7 @@ function productRouter(): Router {
     validateResource(searchProductSchema),
     searchProduct
   );
-  router.get("/products/:id", readOneProduct);
+  router.get("/products/:id", readProduct);
 
   return router;
 }

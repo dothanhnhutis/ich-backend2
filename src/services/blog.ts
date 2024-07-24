@@ -15,6 +15,7 @@ export const blogSelectDefault: Prisma.BlogSelect = {
   author: {
     select: {
       id: true,
+      email: true,
       username: true,
       picture: true,
     },
@@ -22,18 +23,13 @@ export const blogSelectDefault: Prisma.BlogSelect = {
   createdAt: true,
   updatedAt: true,
 };
-
-type createNewBlogType = {
+export type Media = {
+  type: "base64" | "url";
+  data: string;
+};
+type CreateNewBlogType = {
   title: string;
-  image:
-    | {
-        type: "url";
-        data: string;
-      }
-    | {
-        type: "base64";
-        data: string;
-      };
+  image: Media;
   slug: string;
   contentJson: string;
   contentText: string;
@@ -46,7 +42,7 @@ type createNewBlogType = {
 
 // Create
 export async function createNewBlog(
-  data: createNewBlogType,
+  data: CreateNewBlogType,
   select?: Prisma.BlogSelect
 ) {
   const { image, ...props } = data;
@@ -91,27 +87,30 @@ export async function getBlogBySlug(slug: string, select?: Prisma.BlogSelect) {
 }
 
 type QueryBlogWhereType = {
-  title?: string;
-  publishAt?: Date[];
-  contentText?: string;
-  isActive?: boolean;
-  tag?: string[];
-  author?: string[];
+  id?: string[] | undefined;
+  title?: string | undefined;
+  content?: string | undefined;
+  tagId?: string[] | undefined;
+  authorId?: string[] | undefined;
+  isActive?: boolean | undefined;
+  publishAt?: Date[] | undefined;
 };
 
 type QueryBlogOrderByType = {
   title?: "asc" | "desc";
+  tag_name?: "asc" | "desc";
+  author_username?: "asc" | "desc";
   isActive?: "asc" | "desc";
-  tag?: "asc" | "desc";
-  author?: "asc" | "desc";
   publishAt?: "asc" | "desc";
+  createdAt?: "asc" | "desc";
+  updatedAt?: "asc" | "desc";
 };
 
 type QueryBlogType = {
   where?: QueryBlogWhereType;
   limit?: number;
   page?: number;
-  orderBy?: QueryBlogOrderByType[];
+  order_by?: QueryBlogOrderByType[];
   select?: Prisma.BlogSelect;
 };
 
@@ -130,46 +129,56 @@ export async function queryBlog(data?: QueryBlogType) {
     take,
     skip,
   };
-  if (data) {
-    if (data.where) {
-      args.where = {
-        title: {
-          contains: data.where.title,
-        },
-        publishAt:
-          data.where.publishAt && data.where.publishAt.length == 2
-            ? {
-                gte: data.where.publishAt[0],
-                lte: data.where.publishAt[1],
-              }
-            : undefined,
-        isActive: data.where.isActive,
-        contentText: {
-          search: data.where.contentText?.split(" ").join(" | "),
-        },
-        tagId: {
-          in: data.where.tag,
-        },
-        authorId: {
-          in: data.where.author,
-        },
-      };
-    }
-    if (data.orderBy) {
-      args.orderBy = data.orderBy
-        .filter(
-          (d) =>
-            Object.keys(d).length == 1 &&
-            ["title", "isActive", "tag", "author"].includes(Object.keys(d)[0])
-        )
-        .map((d) =>
-          d.tag
-            ? { tag: { name: d.tag } }
-            : d.author
-            ? { author: { username: d.author } }
-            : d
-        ) as Prisma.BlogOrderByWithRelationInput[];
-    }
+
+  if (data?.where) {
+    args.where = {
+      id: {
+        in: data.where.id,
+      },
+      title: {
+        contains: data.where.title,
+      },
+      publishAt:
+        data.where.publishAt && data.where.publishAt.length == 2
+          ? {
+              gte: data.where.publishAt[0],
+              lte: data.where.publishAt[1],
+            }
+          : undefined,
+      isActive: data.where.isActive,
+      contentText: {
+        search: data.where.content?.split(" ").join(" | "),
+      },
+      tagId: {
+        in: data.where.tagId,
+      },
+      authorId: {
+        in: data.where.authorId,
+      },
+    };
+  }
+  if (data?.select) {
+    args.select = Prisma.validator<Prisma.BlogSelect>()({
+      ...blogSelectDefault,
+      ...data.select,
+    });
+  }
+  if (data?.order_by) {
+    args.orderBy = data.order_by
+      .filter(
+        (d) =>
+          Object.keys(d).length == 1 &&
+          ["title", "isActive", "tag_name", "author_username"].includes(
+            Object.keys(d)[0]
+          )
+      )
+      .map((d) =>
+        d.tag_name
+          ? { tag: { name: d.tag_name } }
+          : d.author_username
+          ? { author: { username: d.author_username } }
+          : d
+      ) as Prisma.BlogOrderByWithRelationInput[];
   }
 
   const [blogs, total] = await prisma.$transaction([
@@ -190,7 +199,7 @@ export async function queryBlog(data?: QueryBlogType) {
 // Update
 export async function updateBlogById(
   id: string,
-  data: Partial<createNewBlogType>,
+  data: Partial<CreateNewBlogType>,
   select?: Prisma.BlogSelect
 ) {
   const { image, ...props } = data;

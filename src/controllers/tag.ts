@@ -2,7 +2,7 @@ import { BadRequestError, NotFoundError } from "@/error-handler";
 import { CreateTagReq, EditTagReq, SearchTagReq } from "@/schemas/tag";
 import {
   createNewTag,
-  deleteTagById,
+  removeTagById,
   getAllTag,
   getTagById,
   getTagBySlug,
@@ -16,11 +16,11 @@ export async function searchTag(
   req: Request<{}, {}, SearchTagReq["body"], SearchTagReq["query"]>,
   res: Response
 ) {
-  const { page, limit, orderBy, ...where } = req.body || req.query || {};
+  const { page, limit, order_by, ...where } = req.body || req.query || {};
   return res.status(StatusCodes.OK).send(
     await queryTag({
       where,
-      orderBy,
+      order_by,
       limit,
       page,
     })
@@ -32,13 +32,13 @@ export async function readAllTag(req: Request, res: Response) {
   return res.status(StatusCodes.OK).send(tags);
 }
 
-export async function read(req: Request<{ id: string }>, res: Response) {
+export async function readTag(req: Request<{ id: string }>, res: Response) {
   const tag = await getTagById(req.params.id);
   if (!tag) throw new NotFoundError();
   return res.status(StatusCodes.OK).json(tag);
 }
 
-export async function create(
+export async function createTag(
   req: Request<{}, {}, CreateTagReq["body"]>,
   res: Response
 ) {
@@ -76,6 +76,6 @@ export async function deleteTag(req: Request<{ id: string }>, res: Response) {
   const tag = await getTagById(id, { blog: true });
   if (!tag) throw new BadRequestError("invalid tag id");
   if (tag.blog.length > 0) throw new BadRequestError("slug using");
-  await deleteTagById(id);
+  await removeTagById(id);
   return res.status(StatusCodes.OK).json({ message: "delete tag success" });
 }

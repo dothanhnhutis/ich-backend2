@@ -15,7 +15,7 @@ import { compareData } from "@/utils/helper";
 import { isBase64Data, uploadImageCloudinary } from "@/utils/image";
 import { z } from "zod";
 
-export function read(req: Request, res: Response) {
+export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
 }
 

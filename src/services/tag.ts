@@ -60,13 +60,15 @@ type QueryTagWhereType = {
 
 type QueryTagOrderByType = {
   name?: "asc" | "desc";
+  createdAt?: "asc" | "desc";
+  updatedAt?: "asc" | "desc";
 };
 
 type QueryTagType = {
   where?: QueryTagWhereType;
   limit?: number;
   page?: number;
-  orderBy?: QueryTagOrderByType[];
+  order_by?: QueryTagOrderByType[];
   select?: Prisma.TagSelect;
 };
 
@@ -99,8 +101,8 @@ export async function queryTag(data?: QueryTagType) {
       },
     };
   }
-  if (data?.orderBy) {
-    args.orderBy = data.orderBy;
+  if (data?.order_by) {
+    args.orderBy = data.order_by;
   }
 
   const [tags, total] = await prisma.$transaction([
@@ -134,7 +136,7 @@ export async function updateTagById(
 
 // Delete
 
-export async function deleteTagById(id: string) {
+export async function removeTagById(id: string) {
   await prisma.tag.delete({
     where: {
       id,

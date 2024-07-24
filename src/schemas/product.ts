@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { base64Regex } from "./blog";
 
 const mediaSchema = z.discriminatedUnion("type", [
   z.object({
@@ -83,38 +82,229 @@ export const editProductSchema = z.object({
   }),
   body: createProductBody.strip().partial(),
 });
+const productOrderByRegex =
+  /^((productName|code|category_name|created_by_username|isActive|createdAt|updatedAt)\.(asc|desc)\,)*?(productName|code|category_name|created_by_username|isActive|createdAt|updatedAt)\.(asc|desc)$/;
+const trueFalseRegex = /^(0|1|true|false)$/;
 
 export const searchProductSchema = z.object({
+  query: z
+    .object({
+      id: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      productName: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
+      code: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      description: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
+      categoryId: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      benefits: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      ingredients: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      createdById: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
+      content: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
+      isActive: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((isActive) => {
+          if (Array.isArray(isActive)) {
+            const hasSuspended = isActive
+              .filter((val) => trueFalseRegex.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return hasSuspended
+              ? hasSuspended == "1" || hasSuspended == "true"
+              : undefined;
+          } else {
+            return trueFalseRegex.test(isActive)
+              ? isActive == "1" || isActive == "true"
+              : undefined;
+          }
+        }),
+      order_by: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => {
+          if (Array.isArray(val)) {
+            const tmp = val.filter((val) => productOrderByRegex.test(val));
+            return tmp.length == 0
+              ? undefined
+              : tmp
+                  .join(",")
+                  .split(",")
+                  .filter((val, index, arr) => arr.indexOf(val) === index)
+                  .map((or) => or.split(".").slice(0, 3))
+                  .map(([key, value]) => ({ [key]: value as "asc" | "desc" }));
+          } else {
+            return productOrderByRegex.test(val)
+              ? val
+                  .split(",")
+                  .map((or) => or.split(".").slice(0, 3))
+                  .map(([key, value]) => ({ [key]: value as "asc" | "desc" }))
+              : undefined;
+          }
+        }),
+      page: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => {
+          if (Array.isArray(val)) {
+            const hasPage = val
+              .filter((val) => /^[1-9][0-9]*?$/.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return parseInt(hasPage);
+          } else {
+            return /^[1-9][0-9]*?$/.test(val) ? parseInt(val) : undefined;
+          }
+        }),
+      limit: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((limit) => {
+          if (Array.isArray(limit)) {
+            const hasLimit = limit
+              .filter((val) => /^[1-9][0-9]*?$/.test(val))
+              .filter((val, index, arr) => arr.indexOf(val) === index)
+              .reverse()[0];
+            return parseInt(hasLimit);
+          } else {
+            return /^[1-9][0-9]*?$/.test(limit) ? parseInt(limit) : undefined;
+          }
+        }),
+    })
+    .strip()
+    .partial()
+    .transform((val) => {
+      for (let key of Object.keys(val)) {
+        if (val[key as keyof typeof val] == undefined)
+          delete val[key as keyof typeof val];
+      }
+      return Object.keys(val).length == 0 ? undefined : val;
+    }),
   body: z
     .object({
-      id: z.array(z.string()),
-      name: z.string(),
-      code: z.array(z.string()),
-      description: z.string(),
-      categoryId: z.array(z.string()),
-      benefits: z.array(z.string()),
-      ingredients: z.array(z.string()),
-      createdById: z.array(z.string()),
-      content: z.string(),
-      isActive: z.boolean(),
-      orderBy: z.array(
+      id: z
+        .array(
+          z.string({
+            invalid_type_error: "id must be array string",
+          }),
+          {
+            invalid_type_error: "id must be array string",
+          }
+        )
+        .min(1, "id can not empty"),
+      productName: z.string({
+        invalid_type_error: "productName must be array string",
+      }),
+      code: z.array(
+        z.string({
+          invalid_type_error: "code item must be string",
+        }),
+        {
+          invalid_type_error: "code must be array array",
+        }
+      ),
+      description: z.string({
+        invalid_type_error: "description item must be string",
+      }),
+      categoryId: z.array(
+        z.string({
+          invalid_type_error: "categoryId item must be string",
+        }),
+        {
+          invalid_type_error: "categoryId must be array array",
+        }
+      ),
+      benefits: z.array(
+        z.string({
+          invalid_type_error: "benefits item must be string",
+        }),
+        {
+          invalid_type_error: "benefits must be array array",
+        }
+      ),
+      ingredients: z.array(
+        z.string({
+          invalid_type_error: "ingredients item must be string",
+        }),
+        {
+          invalid_type_error: "ingredients must be array array",
+        }
+      ),
+      createdById: z.array(
+        z.string({
+          invalid_type_error: "createdById item must be string",
+        }),
+        {
+          invalid_type_error: "createdById must be array array",
+        }
+      ),
+      content: z.string({
+        invalid_type_error: "content must be string",
+      }),
+      isActive: z.boolean({
+        invalid_type_error: "isActive must be boolean",
+      }),
+      order_by: z.array(
         z
           .object(
             {
-              title: z.enum(["asc", "desc"], {
-                message: "orderBy title  must be enum 'asc'|'desc'",
+              productName: z.enum(["asc", "desc"], {
+                message: "orderBy productName  must be enum 'asc'|'desc'",
+              }),
+              code: z.enum(["asc", "desc"], {
+                message: "orderBy code  must be enum 'asc'|'desc'",
+              }),
+              category_name: z.enum(["asc", "desc"], {
+                message: "orderBy category_name  must be enum 'asc'|'desc'",
+              }),
+              created_by_username: z.enum(["asc", "desc"], {
+                message:
+                  "orderBy created_by_username  must be enum 'asc'|'desc'",
               }),
               isActive: z.enum(["asc", "desc"], {
                 message: "orderBy isActive  must be enum 'asc'|'desc'",
               }),
-              tag: z.enum(["asc", "desc"], {
-                message: "orderBy tag  must be enum 'asc'|'desc'",
+              createdAt: z.enum(["asc", "desc"], {
+                message: "orderBy createdAt  must be enum 'asc'|'desc'",
               }),
-              author: z.enum(["asc", "desc"], {
-                message: "orderBy author  must be enum 'asc'|'desc'",
-              }),
-              publishAt: z.enum(["asc", "desc"], {
-                message: "orderBy publishAt  must be enum 'asc'|'desc'",
+              updatedAt: z.enum(["asc", "desc"], {
+                message: "orderBy updatedAt  must be enum 'asc'|'desc'",
               }),
             },
             { invalid_type_error: "orderBy must be array object" }
@@ -128,7 +318,7 @@ export const searchProductSchema = z.object({
             },
             {
               message:
-                "Each object must have exactly one key, either 'title'|'isActive'|'tag'|'author'|'publishAt'",
+                "Each object must have exactly one key, either 'productName'|'code'|'category_name'|'created_by_username'|'isActive'|'createdAt'|'updatedAt'",
             }
           ),
         {
@@ -147,10 +337,10 @@ export const searchProductSchema = z.object({
         .gte(1, "Page field should be >= 1"),
     })
     .strip()
-    .partial(),
+    .partial()
+    .transform((val) => (Object.keys(val).length == 0 ? undefined : val)),
 });
 
 export type SearchProductReq = z.infer<typeof searchProductSchema>;
-
 export type CreateProductReq = z.infer<typeof createProductSchema>;
 export type EditProductReq = z.infer<typeof editProductSchema>;

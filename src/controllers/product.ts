@@ -1,11 +1,16 @@
 import { BadRequestError, NotFoundError } from "@/error-handler";
-import { CreateProductReq, EditProductReq } from "@/schemas/product";
+import {
+  CreateProductReq,
+  EditProductReq,
+  SearchProductReq,
+} from "@/schemas/product";
 import { getCategoryById } from "@/services/category";
 import {
   createNewProduct,
   getProductByCode,
   getProductById,
   getProductBySlug,
+  queryProduct,
   updateProductById,
 } from "@/services/product";
 import { Request, Response } from "express";
@@ -61,15 +66,23 @@ export async function editProduct(
     .json({ message: "update product success", product: newProduct });
 }
 
-export async function searchProduct(req: Request, res: Response) {
-  return res.status(StatusCodes.OK).send("Server health check oker");
-}
-
-export async function readOneProduct(
-  req: Request<{ id: string }>,
-  res: Response
-) {
+export async function readProduct(req: Request<{ id: string }>, res: Response) {
   const product = await getProductById(req.params.id);
   if (!product) throw new NotFoundError();
   return res.status(StatusCodes.OK).json(product);
+}
+
+export async function searchProduct(
+  req: Request<{}, {}, SearchProductReq["body"], SearchProductReq["query"]>,
+  res: Response
+) {
+  const { page, limit, order_by, ...where } = req.body || req.query || {};
+  return res.status(StatusCodes.OK).json(
+    await queryProduct({
+      where,
+      page,
+      limit,
+      order_by,
+    })
+  );
 }

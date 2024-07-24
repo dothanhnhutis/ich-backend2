@@ -4,8 +4,8 @@ const MAX_FILE_SIZE = 5000000;
 export const base64Regex =
   /^data:image\/(?:png|gif|png|jpg|jpeg|bmp|webp)(?:;charset=utf-8)?;base64,(?:[A-Za-z0-9]|[+/])+={0,2}/g;
 const trueFalseRegex = /^(0|1|true|false)$/;
-const orderByRegex =
-  /^((title|isActive|tag|author|publishAt)\.(asc|desc)\,)*?(title|isActive|tag|author|publishAt)\.(asc|desc)$/;
+const blogOrderByRegex =
+  /^((title|isActive|tag|author|publishAt|createdAt|updatedAt)\.(asc|desc)\,)*?(title|isActive|tag|author|publishAt|createdAt|updatedAt)\.(asc|desc)$/;
 const dateRegex =
   /^(([1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d{1}|3[0-1]))T([0-5]\d:[0-5]\d:[0-5]\d).\d{3}Z),(([1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d{1}|3[0-1]))T([0-5]\d:[0-5]\d:[0-5]\d).\d{3}Z)$/;
 
@@ -60,6 +60,7 @@ const blogBody = z.object({
 export const createBlogSchema = z.object({
   body: blogBody.strict(),
 });
+
 export const editBlogSchema = z.object({
   params: z
     .object({
@@ -72,6 +73,12 @@ export const editBlogSchema = z.object({
 export const queryblogSchema = z.object({
   query: z
     .object({
+      id: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
       title: z
         .string()
         .or(z.array(z.string()))
@@ -128,20 +135,20 @@ export const queryblogSchema = z.object({
               : undefined;
           }
         }),
-      tag: z
+      tagId: z
         .string()
         .or(z.array(z.string()))
         .transform((val) => (Array.isArray(val) ? val : val.split(","))),
-      author: z
+      authorId: z
         .string()
         .or(z.array(z.string()))
         .transform((val) => (Array.isArray(val) ? val : val.split(","))),
-      orderBy: z
+      order_by: z
         .string()
         .or(z.array(z.string()))
         .transform((val) => {
           if (Array.isArray(val)) {
-            const tmp = val.filter((val) => orderByRegex.test(val));
+            const tmp = val.filter((val) => blogOrderByRegex.test(val));
             return tmp.length == 0
               ? undefined
               : tmp
@@ -151,7 +158,7 @@ export const queryblogSchema = z.object({
                   .map((or) => or.split(".").slice(0, 3))
                   .map(([key, value]) => ({ [key]: value as "asc" | "desc" }));
           } else {
-            return orderByRegex.test(val)
+            return blogOrderByRegex.test(val)
               ? val
                   .split(",")
                   .map((or) => or.split(".").slice(0, 3))
@@ -199,7 +206,28 @@ export const queryblogSchema = z.object({
     }),
   body: z
     .object({
+      id: z
+        .array(
+          z.string({
+            invalid_type_error: "id must be array string",
+          }),
+          {
+            invalid_type_error: "id must be array string",
+          }
+        )
+        .min(1, "id can not empty"),
       title: z.string({ invalid_type_error: "title must be string" }),
+      content: z.string({ invalid_type_error: "content must be string" }),
+      tag: z.array(z.string({ invalid_type_error: "tag must be string" }), {
+        invalid_type_error: "tag must be array",
+      }),
+      author: z.array(
+        z.string({ invalid_type_error: "author must be string" }),
+        {
+          invalid_type_error: "author must be array",
+        }
+      ),
+      isActive: z.boolean({ invalid_type_error: "isActive must be boolean" }),
       publishAt: z
         .array(
           z.coerce.date({
@@ -218,18 +246,7 @@ export const queryblogSchema = z.object({
         .refine((val) => val[0] <= val[1], {
           message: "publishAt[0] <= publishAt[1] ",
         }),
-      content: z.string({ invalid_type_error: "content must be string" }),
-      isActive: z.boolean({ invalid_type_error: "isActive must be boolean" }),
-      tag: z.array(z.string({ invalid_type_error: "tag must be string" }), {
-        invalid_type_error: "tag must be array",
-      }),
-      author: z.array(
-        z.string({ invalid_type_error: "author must be string" }),
-        {
-          invalid_type_error: "author must be array",
-        }
-      ),
-      orderBy: z.array(
+      order_by: z.array(
         z
           .object(
             {
@@ -248,6 +265,12 @@ export const queryblogSchema = z.object({
               publishAt: z.enum(["asc", "desc"], {
                 message: "orderBy publishAt  must be enum 'asc'|'desc'",
               }),
+              createdAt: z.enum(["asc", "desc"], {
+                message: "orderBy createdAt  must be enum 'asc'|'desc'",
+              }),
+              updatedAt: z.enum(["asc", "desc"], {
+                message: "orderBy updatedAt  must be enum 'asc'|'desc'",
+              }),
             },
             { invalid_type_error: "orderBy must be array object" }
           )
@@ -260,7 +283,7 @@ export const queryblogSchema = z.object({
             },
             {
               message:
-                "Each object must have exactly one key, either 'title'|'isActive'|'tag'|'author'|'publishAt'",
+                "Each object must have exactly one key, either 'title'|'isActive'|'tag'|'author'|'publishAt'|'createdAt'|'updatedAt'",
             }
           ),
         {

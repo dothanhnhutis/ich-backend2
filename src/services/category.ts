@@ -32,19 +32,21 @@ export async function getAllCategory(select?: Prisma.CategorySelect) {
 }
 
 type QueryCategoryWhereType = {
-  name?: string | undefined;
   id?: string[] | undefined;
+  name?: string | undefined;
 };
 
 type QueryCategoryOrderByType = {
   name?: "asc" | "desc";
+  createdAt?: "asc" | "desc";
+  updatedAt?: "asc" | "desc";
 };
 
 type QueryCategoryType = {
   where: QueryCategoryWhereType;
   limit?: number;
   page?: number;
-  orderBy?: QueryCategoryOrderByType[];
+  order_by?: QueryCategoryOrderByType[];
   select?: Prisma.CategorySelect;
 };
 
@@ -75,8 +77,8 @@ export async function queryCategories(data?: QueryCategoryType) {
       ...data.select,
     });
   }
-  if (data?.orderBy) {
-    args.orderBy = data.orderBy;
+  if (data?.order_by) {
+    args.orderBy = data.order_by;
   }
 
   const [categories, total] = await prisma.$transaction([
@@ -106,7 +108,7 @@ export async function getCategoryBySlug(
   });
 }
 
-export async function createCategory(
+export async function createNewCategory(
   data: { name: string; slug: string },
   select?: Prisma.CategorySelect
 ) {
@@ -134,7 +136,7 @@ export async function updateCategoryById(
   });
 }
 
-export async function deleteCategoryById(
+export async function removeCategoryById(
   id: string,
   select?: Prisma.CategorySelect
 ) {

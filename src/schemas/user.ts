@@ -1,13 +1,12 @@
 import { z } from "zod";
 
 const roles = ["MANAGER", "SALER", "BLOGER", "CUSTOMER"] as const;
-
 const emailRegex =
   /^((([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))(\,))*?(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const roleRegex =
   /^((MANAGER|SALER|BLOGER|CUSTOMER)(\,))*?(MANAGER|SALER|BLOGER|CUSTOMER)$/;
 const trueFalseRegex = /^(0|1|true|false)$/;
-const orderByRegex =
+const userOrderByRegex =
   /^((email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)$/;
 
 export const creatUserSchema = z.object({
@@ -146,14 +145,14 @@ export const searchUserSchema = z.object({
         .transform((orderBy) => {
           if (Array.isArray(orderBy)) {
             return orderBy
-              .filter((val) => orderByRegex.test(val))
+              .filter((val) => userOrderByRegex.test(val))
               .join(",")
               .split(",")
               .filter((val, index, arr) => arr.indexOf(val) === index)
               .map((or) => or.split(".").slice(0, 3))
               .map(([key, value]) => ({ [key]: value }));
           } else {
-            return orderByRegex.test(orderBy)
+            return userOrderByRegex.test(orderBy)
               ? orderBy
                   .split(",")
                   .map((or) => or.split(".").slice(0, 3))
@@ -271,7 +270,7 @@ export const searchUserSchema = z.object({
               },
               {
                 message:
-                  "Each object must have exactly one key, either 'email'|'role'|'emailVerified'|'inActive'|'suspended'",
+                  "Each object must have exactly one key, either 'email'|'role'|'emailVerified'|'inActive'|'suspended'|'createdAt'|'updatedAt'",
               }
             )
         )

@@ -1,4 +1,5 @@
 import configs from "@/configs";
+import { BadRequestError } from "@/error-handler";
 import { CreateUserReq, Role } from "@/schemas/user";
 import prisma from "@/utils/db";
 import { hashData } from "@/utils/helper";
@@ -104,7 +105,9 @@ export async function getUserByToken(
 }
 
 type QueryUserWhereType = {
+  id?: string[] | undefined;
   email?: string[] | undefined;
+  username?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
   inActive?: boolean | undefined;
@@ -113,17 +116,20 @@ type QueryUserWhereType = {
 
 type QueryUserOrderByType = {
   email?: "asc" | "desc";
+  username?: "asc" | "desc";
   role?: "asc" | "desc";
   emailVerified?: "asc" | "desc";
   inActive?: "asc" | "desc";
   suspended?: "asc" | "desc";
+  createdAt?: "asc" | "desc";
+  updatedAt?: "asc" | "desc";
 };
 
 type QueryUserType = {
   where: QueryUserWhereType;
   limit?: number;
   page?: number;
-  orderBy?: QueryUserOrderByType[];
+  order_by?: QueryUserOrderByType[];
   select?: Prisma.UserSelect;
 };
 
@@ -140,28 +146,33 @@ export async function queueUser(data?: QueryUserType) {
     take,
     skip,
   };
-  if (data) {
-    const { email, role, emailVerified, inActive, suspended } = data.where;
-    args = {
-      ...args,
-      where: {
-        email: {
-          in: email,
-        },
-        role: {
-          in: role,
-          notIn: ["ADMIN"],
-        },
-        emailVerified: emailVerified,
-        inActive: inActive,
-        suspended: suspended,
+  if (data?.where) {
+    const { id, email, role, username, emailVerified, inActive, suspended } =
+      data.where;
+    args.where = {
+      username: {
+        contains: username,
       },
-      select: Prisma.validator<Prisma.UserSelect>()({
-        ...userSelectDefault,
-        ...data.select,
-      }),
-      orderBy: data.orderBy,
+      id: {
+        in: id,
+      },
+      email: {
+        in: email,
+      },
+      role: {
+        in: role,
+        notIn: ["ADMIN"],
+      },
+      emailVerified: emailVerified,
+      inActive: inActive,
+      suspended: suspended,
     };
+  }
+  if (data?.select) {
+    args.select = data.select;
+  }
+  if (data?.order_by) {
+    args.orderBy = data.order_by;
   }
 
   const [users, total] = await prisma.$transaction([
@@ -293,7 +304,9 @@ export async function updateUserById(
   if (data.password) {
     data.password = hashData(data.password);
   }
-  await prisma.user.update({
+  throw new BadRequestError("AAAAA");
+
+  return await prisma.user.update({
     where: {
       id: userId,
     },

@@ -24,26 +24,27 @@ export const editTagSchema = z.object({
   }),
   body: bodyTag.strip().partial(),
 });
-
+const tagOrderByRegex =
+  /^((name|createdAt|updatedAt)\.(asc|desc)\,)*?(name|createdAt|updatedAt)\.(asc|desc)$/;
 export const searchTagSchema = z.object({
   query: z
     .object({
-      name: z
-        .string()
-        .or(z.array(z.string()))
-        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
       id: z
         .string()
         .or(z.array(z.string()))
         .transform((val) =>
           Array.isArray(val) ? val.join(",").split(",") : val.split(",")
         ),
-      orderBy: z
+      name: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
+      order_by: z
         .string()
         .or(z.array(z.string()))
         .transform((val) => {
           if (Array.isArray(val)) {
-            const tmp = val.filter((val) => /(name)\.(asc|desc)/.test(val));
+            const tmp = val.filter((val) => tagOrderByRegex.test(val));
             return tmp.length == 0
               ? undefined
               : tmp
@@ -53,7 +54,7 @@ export const searchTagSchema = z.object({
                   .map((or) => or.split(".").slice(0, 3))
                   .map(([key, value]) => ({ [key]: value as "asc" | "desc" }));
           } else {
-            return /(name)\.(asc|desc)/.test(val)
+            return tagOrderByRegex.test(val)
               ? val
                   .split(",")
                   .map((or) => or.split(".").slice(0, 3))
@@ -101,23 +102,31 @@ export const searchTagSchema = z.object({
     }),
   body: z
     .object({
-      id: z.array(
-        z.string({
-          invalid_type_error: "id must be array string",
-        }),
-        {
-          invalid_type_error: "id must be array string",
-        }
-      ),
+      id: z
+        .array(
+          z.string({
+            invalid_type_error: "id must be array string",
+          }),
+          {
+            invalid_type_error: "id must be array string",
+          }
+        )
+        .min(1, "id can not empty"),
       name: z.string({
         invalid_type_error: "name must be array string",
       }),
-      orderBy: z.array(
+      order_by: z.array(
         z
           .object(
             {
               name: z.enum(["asc", "desc"], {
                 message: "orderBy name  must be enum 'asc'|'desc'",
+              }),
+              createdAt: z.enum(["asc", "desc"], {
+                message: "orderBy createdAt  must be enum 'asc'|'desc'",
+              }),
+              updatedAt: z.enum(["asc", "desc"], {
+                message: "orderBy updatedAt  must be enum 'asc'|'desc'",
               }),
             },
             { invalid_type_error: "orderBy must be array object" }
@@ -130,7 +139,8 @@ export const searchTagSchema = z.object({
               return keys.length === 1;
             },
             {
-              message: "Each object must have exactly one key, either 'name'",
+              message:
+                "Each object must have exactly one key, either 'name'|'createdAt'|'updatedAt'",
             }
           ),
         {
