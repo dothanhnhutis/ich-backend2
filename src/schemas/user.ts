@@ -8,7 +8,7 @@ const roleRegex =
   /^((MANAGER|SALER|BLOGER|CUSTOMER)(\,))*?(MANAGER|SALER|BLOGER|CUSTOMER)$/;
 const trueFalseRegex = /^(0|1|true|false)$/;
 const orderByRegex =
-  /^((email|role|emailVerified|inActive|suspended)\.(asc|desc)\,)*?(email|role|emailVerified|inActive|suspended)\.(asc|desc)$/;
+  /^((email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)$/;
 
 export const creatUserSchema = z.object({
   body: z
@@ -44,6 +44,12 @@ export const creatUserSchema = z.object({
 export const searchUserSchema = z.object({
   query: z
     .object({
+      id: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) =>
+          Array.isArray(val) ? val.join(",").split(",") : val.split(",")
+        ),
       email: z
         .string()
         .or(z.array(z.string()))
@@ -58,6 +64,10 @@ export const searchUserSchema = z.object({
             return emailRegex.test(email) ? email.split(",") : undefined;
           }
         }),
+      username: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
       role: z
         .string()
         .or(z.array(z.string()))
@@ -130,7 +140,7 @@ export const searchUserSchema = z.object({
               : undefined;
           }
         }),
-      orderBy: z
+      order_by: z
         .string()
         .or(z.array(z.string()))
         .transform((orderBy) => {
@@ -191,9 +201,28 @@ export const searchUserSchema = z.object({
     }),
   body: z
     .object({
+      id: z
+        .array(
+          z.string({
+            invalid_type_error: "id item must be string",
+          }),
+          {
+            invalid_type_error: "id must be array",
+          }
+        )
+        .min(1, "id can't empty"),
       email: z
-        .array(z.string().email("Invalid email in array"))
+        .array(
+          z
+            .string({
+              invalid_type_error: "email item must be string",
+            })
+            .email("Invalid email in array")
+        )
         .min(1, "Emails can't empty"),
+      username: z.string({
+        invalid_type_error: "username must be string",
+      }),
       role: z.array(z.enum(roles)).min(1, "Roles can't empty"),
       emailVerified: z.boolean({
         invalid_type_error: "EmailVerified must be boolean",
@@ -204,12 +233,15 @@ export const searchUserSchema = z.object({
       suspended: z.boolean({
         invalid_type_error: "Suspended must be boolean",
       }),
-      orderBy: z
+      order_by: z
         .array(
           z
             .object({
               email: z.enum(["asc", "desc"], {
                 message: "orderBy email must be enum 'asc'|'desc'",
+              }),
+              username: z.enum(["asc", "desc"], {
+                message: "orderBy username must be enum 'asc'|'desc'",
               }),
               role: z.enum(["asc", "desc"], {
                 message: "orderBy role must be enum 'asc'|'desc'",
@@ -222,6 +254,12 @@ export const searchUserSchema = z.object({
               }),
               suspended: z.enum(["asc", "desc"], {
                 message: "orderBy suspended must be enum 'asc'|'desc'",
+              }),
+              createdAt: z.enum(["asc", "desc"], {
+                message: "orderBy createdAt must be enum 'asc'|'desc'",
+              }),
+              updatedAt: z.enum(["asc", "desc"], {
+                message: "orderBy updatedAt must be enum 'asc'|'desc'",
               }),
             })
             .strip()
