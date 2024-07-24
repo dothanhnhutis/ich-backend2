@@ -190,7 +190,7 @@ export async function queueUser(data?: QueryUserType) {
   };
 }
 // Create
-export async function createUserWithPassword(
+export async function insertUserWithPassword(
   data: {
     email: string;
     password: string;
@@ -238,7 +238,7 @@ export async function createUserWithPassword(
   return user;
 }
 
-export async function createUserWithGoogle(googleData: GoogleUserInfo) {
+export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters: string = randomBytes.toString("hex");
   const date: Date = new Date(Date.now() + 24 * 60 * 60000);
@@ -296,19 +296,18 @@ type UpdateUserByIdData = {
   email?: string;
 };
 
-export async function updateUserById(
-  userId: string,
+export async function editUserById(
+  id: string,
   data: UpdateUserByIdData,
   select?: Prisma.UserSelect
 ) {
   if (data.password) {
     data.password = hashData(data.password);
   }
-  throw new BadRequestError("AAAAA");
 
   return await prisma.user.update({
     where: {
-      id: userId,
+      id,
     },
     data: data,
     select: Prisma.validator<Prisma.UserSelect>()({

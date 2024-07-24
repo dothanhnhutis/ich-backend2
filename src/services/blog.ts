@@ -41,7 +41,7 @@ type CreateNewBlogType = {
 };
 
 // Create
-export async function createNewBlog(
+export async function insertBlog(
   data: CreateNewBlogType,
   select?: Prisma.BlogSelect
 ) {
@@ -197,7 +197,7 @@ export async function queryBlog(data?: QueryBlogType) {
 }
 
 // Update
-export async function updateBlogById(
+export async function editBlogById(
   id: string,
   data: Partial<CreateNewBlogType>,
   select?: Prisma.BlogSelect

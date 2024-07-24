@@ -19,8 +19,8 @@ import {
 } from "@/schemas/current-user";
 import {
   createNewUser,
-  editUserById,
-  getOneUser,
+  updateUserById,
+  readUser,
   searchUser,
 } from "@/controllers/user";
 import {
@@ -57,7 +57,7 @@ function userRouter(): Router {
     "/users/:id",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN"]),
-    getOneUser
+    readUser
   );
   //User
   router.post(
@@ -99,7 +99,7 @@ function userRouter(): Router {
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN"]),
     validateResource(editUserSchema),
-    editUserById
+    updateUserById
   );
   // User
   router.patch(

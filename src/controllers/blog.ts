@@ -2,11 +2,11 @@ import { BadRequestError, PermissionError } from "@/error-handler";
 import { CreateBlogReq, EditBlogReq, QueryBlogReq } from "@/schemas/blog";
 import { Role } from "@/schemas/user";
 import {
-  createNewBlog,
+  insertBlog,
   getBlogById,
   getBlogBySlug,
   queryBlog,
-  updateBlogById,
+  editBlogById,
 } from "@/services/blog";
 import { getTagById } from "@/services/tag";
 import { getUserById } from "@/services/user";
@@ -28,7 +28,7 @@ export async function createBlog(
   const authorExist = await getUserById(authorId);
   if (!authorExist) throw new BadRequestError("invalid author");
 
-  await createNewBlog(req.body);
+  await insertBlog(req.body);
 
   return res
     .status(StatusCodes.CREATED)
@@ -79,7 +79,7 @@ export async function updateBlog(
     throw new BadRequestError("cannot change publishAt after publish");
   }
 
-  await updateBlogById(id, req.body);
+  await editBlogById(id, req.body);
 
   return res.send({ message: "update blog success" });
 }

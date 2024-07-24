@@ -4,11 +4,11 @@ import { StatusCodes } from "http-status-codes";
 import { BadRequestError } from "@/error-handler";
 import { CreateUserReq, EditUserReq, SearchUserReq } from "@/schemas/user";
 import {
-  createUserWithPassword,
+  insertUserWithPassword,
   getUserByEmail,
   getUserById,
   queueUser,
-  updateUserById,
+  editUserById,
 } from "@/services/user";
 
 export async function searchUser(
@@ -33,18 +33,18 @@ export async function createNewUser(
   const { email } = req.body;
   const user = await getUserByEmail(email);
   if (user) throw new BadRequestError("Email has been used");
-  await createUserWithPassword(req.body);
+  await insertUserWithPassword(req.body);
   return res.status(StatusCodes.OK).json({
     message: "create new user success",
   });
 }
 
-export async function getOneUser(req: Request<{ id: string }>, res: Response) {
+export async function readUser(req: Request<{ id: string }>, res: Response) {
   const user = await getUserById(req.params.id);
   res.status(StatusCodes.OK).json(user);
 }
 
-export async function editUserById(
+export async function updateUserById(
   req: Request<EditUserReq["params"], {}, EditUserReq["body"]>,
   res: Response
 ) {
@@ -52,7 +52,7 @@ export async function editUserById(
   const data = req.body;
   const userExist = await getUserById(userId);
   if (!userExist) throw new BadRequestError("Invalid user id");
-  await updateUserById(userId, data);
+  await editUserById(userId, data);
   res.status(StatusCodes.OK).json({
     message: "Update user success",
   });

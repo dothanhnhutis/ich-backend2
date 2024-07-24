@@ -1,4 +1,5 @@
 import z from "zod";
+import { mediaSchema } from "./product";
 
 export const changePasswordSchema = z.object({
   body: z
@@ -29,17 +30,7 @@ export const changePasswordSchema = z.object({
 });
 
 export const changeAvatarSchema = z.object({
-  body: z
-    .object({
-      type: z.enum(["base64", "url"], {
-        invalid_type_error: "type must be 'base64' | 'url'",
-      }),
-      data: z.string({
-        required_error: "data is required",
-        invalid_type_error: "data must be string",
-      }),
-    })
-    .strict(),
+  body: mediaSchema,
 });
 
 export const editProfileSchema = z.object({

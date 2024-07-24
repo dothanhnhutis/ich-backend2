@@ -1,23 +1,41 @@
 import { z } from "zod";
 
-const mediaSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("url"),
-    data: z
-      .string({
-        required_error: "data field is required",
-        invalid_type_error: "data must be string",
-      })
-      .url("data must be url"),
-  }),
-  z.object({
-    type: z.literal("base64"),
-    data: z.string({
-      required_error: "data field is required",
-      invalid_type_error: "data must be string",
+export const mediaSchema = z.discriminatedUnion(
+  "type",
+  [
+    z.object({
+      type: z.literal("url"),
+      data: z
+        .string({
+          required_error: "data field is required",
+          invalid_type_error: "data must be string",
+        })
+        .url("data must be url"),
     }),
-  }),
-]);
+    z.object({
+      type: z.literal("base64"),
+      data: z
+        .string({
+          required_error: "data field is required",
+          invalid_type_error: "data must be string",
+        })
+        .regex(
+          /^data:image\/(?:png|jpeg|jpg|webp)(?:;charset=utf-8)?;base64,(?:[A-Za-z0-9]|[+/])+={0,2}/,
+          "Invalid data. Expect: base64"
+        ),
+    }),
+  ],
+  {
+    errorMap: (issue, { defaultError }) => {
+      return {
+        message:
+          issue.code == "invalid_union_discriminator"
+            ? "type must be 'url' | 'base64'"
+            : defaultError,
+      };
+    },
+  }
+);
 
 const createProductBody = z.object({
   images: z.array(mediaSchema).min(1, "images can't be empty"),

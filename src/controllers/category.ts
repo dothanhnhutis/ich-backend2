@@ -5,13 +5,13 @@ import {
   SearchCategoryReq,
 } from "@/schemas/category";
 import {
-  createNewCategory,
+  insertCategory,
   removeCategoryById,
   getAllCategory,
   getCategoryById,
   getCategoryBySlug,
   queryCategories,
-  updateCategoryById,
+  editCategoryById,
 } from "@/services/category";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -51,7 +51,7 @@ export async function createCategory(
   const { name, slug } = req.body;
   const category = await getCategoryBySlug(slug);
   if (category) throw new BadRequestError("slug already exists");
-  const newCategory = await createNewCategory({ name, slug });
+  const newCategory = await insertCategory({ name, slug });
   return res.status(StatusCodes.CREATED).json({
     message: "create category success",
     category: newCategory,
@@ -72,7 +72,7 @@ export async function editCategory(
     const slugExist = await getCategoryById(slug);
     if (slugExist) throw new BadRequestError("slug already exists");
   }
-  const newCategory = await updateCategoryById(id, req.body);
+  const newCategory = await editCategoryById(id, req.body);
   return res.status(StatusCodes.OK).json({
     message: "update category success",
     category: newCategory,

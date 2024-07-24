@@ -1,13 +1,13 @@
 import { BadRequestError, NotFoundError } from "@/error-handler";
 import { CreateTagReq, EditTagReq, SearchTagReq } from "@/schemas/tag";
 import {
-  createNewTag,
+  insertTag,
   removeTagById,
   getAllTag,
   getTagById,
   getTagBySlug,
   queryTag,
-  updateTagById,
+  editTagById,
 } from "@/services/tag";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -45,7 +45,7 @@ export async function createTag(
   const { name, slug } = req.body;
   const tag = await getTagBySlug(slug);
   if (tag) throw new BadRequestError("invalid slug");
-  const newTag = await createNewTag(req.body);
+  const newTag = await insertTag(req.body);
   return res
     .status(StatusCodes.CREATED)
     .json({ message: "create tag success", tag: newTag });
@@ -66,7 +66,7 @@ export async function updateTag(
     if (slugExist) throw new BadRequestError("slug already exists");
   }
 
-  await updateTagById(id, req.body);
+  await editTagById(id, req.body);
 
   return res.status(StatusCodes.OK).json({ message: "update tag success" });
 }

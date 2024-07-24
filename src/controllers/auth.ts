@@ -3,12 +3,12 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "@/error-handler";
 import {
-  createUserWithGoogle,
-  createUserWithPassword,
+  insertUserWithGoogle,
+  insertUserWithPassword,
   getUserByEmail,
   getUserByToken,
   GoogleUserInfo,
-  updateUserById,
+  editUserById,
 } from "@/services/user";
 import {
   checkEmailSignInReq,
@@ -21,7 +21,7 @@ import { signJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
 import { compareData } from "@/utils/helper";
-import { getGoogleProviderById, createGoogleLink } from "@/services/link";
+import { getGoogleProviderById, insertGoogleLink } from "@/services/link";
 
 export async function reActivateAccount(
   req: Request<{ token: string }>,
@@ -31,7 +31,7 @@ export async function reActivateAccount(
   const user = await await getUserByToken("reActivate", token);
 
   if (!user) throw new NotFoundError();
-  await updateUserById(user.id, {
+  await editUserById(user.id, {
     inActive: true,
     reActiveExpires: new Date(),
     reActiveToken: null,
@@ -61,7 +61,7 @@ export async function recoverAccount(
   if (!randomCharacters || !date || date.getTime() < Date.now()) {
     randomCharacters = randomBytes.toString("hex");
     date = new Date(Date.now() + 4 * 60 * 60000);
-    await updateUserById(existingUser.id, {
+    await editUserById(existingUser.id, {
       passwordResetToken: randomCharacters,
       passwordResetExpires: date,
     });
@@ -97,7 +97,7 @@ export async function resetPassword(
 
   const existingUser = await getUserByToken("recoverAccount", token);
   if (!existingUser) throw new BadRequestError("Reset token has expired");
-  await updateUserById(existingUser.id, {
+  await editUserById(existingUser.id, {
     password,
   });
 
@@ -218,8 +218,8 @@ export async function signInWithGoogleCallBack(
           )
           .redirect(`${configs.CLIENT_URL}/auth/signin`);
       }
-      const user = await createUserWithGoogle(userInfo);
-      googleProvider = await createGoogleLink(userInfo.id, user.id);
+      const user = await insertUserWithGoogle(userInfo);
+      googleProvider = await insertGoogleLink(userInfo.id, user.id);
     }
 
     if (googleProvider.user.suspended)
@@ -267,7 +267,7 @@ export async function checkEmailSignIn(
   ) {
     randomCharacters = randomBytes.toString("hex");
     date = new Date(Date.now() + 5 * 60000);
-    await updateUserById(user.id, {
+    await editUserById(user.id, {
       reActiveToken: randomCharacters,
       reActiveExpires: date,
     });
@@ -305,7 +305,7 @@ export async function signUp(
   const user = await getUserByEmail(email);
   if (user) throw new BadRequestError("User already exists");
 
-  await createUserWithPassword(req.body);
+  await insertUserWithPassword(req.body);
 
   return res.status(StatusCodes.CREATED).send({
     message:
@@ -321,7 +321,7 @@ export async function verifyEmail(
   const user = await getUserByToken("emailVerification", token);
   if (!user) throw new NotFoundError();
 
-  await updateUserById(user.id, {
+  await editUserById(user.id, {
     emailVerified: true,
     emailVerificationToken: null,
     emailVerificationExpires: new Date(),

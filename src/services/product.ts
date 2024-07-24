@@ -59,7 +59,7 @@ type CreateProductDateType = {
   isActive?: boolean;
 };
 
-export async function createNewProduct(
+export async function insertProduct(
   data: CreateProductDateType,
   select?: Prisma.ProductSelect
 ) {
@@ -90,7 +90,7 @@ export async function createNewProduct(
   });
 }
 
-export async function updateProductById(
+export async function editProductById(
   id: string,
   data: Partial<CreateProductDateType>,
   select?: Prisma.ProductSelect

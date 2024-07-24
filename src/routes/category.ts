@@ -1,12 +1,5 @@
 import express, { type Router } from "express";
-import {
-  create,
-  edit,
-  read,
-  readAll,
-  remove,
-  search,
-} from "@/controllers/category";
+
 import { authMiddleware } from "@/middleware/requiredAuth";
 import checkPermission from "@/middleware/checkPermission";
 import validateResource from "@/middleware/validateResource";
@@ -15,6 +8,14 @@ import {
   editCategorySchema,
   searchCategorySchema,
 } from "@/schemas/category";
+import {
+  createCategory,
+  deleteCategory,
+  editCategory,
+  readAllCategory,
+  readCategory,
+  searchCategory,
+} from "@/controllers/category";
 
 const router: Router = express.Router();
 function categoryRouter(): Router {
@@ -23,29 +24,29 @@ function categoryRouter(): Router {
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(searchCategorySchema),
-    search
+    searchCategory
   );
-  router.get("/categories/:id", read);
-  router.get("/categories", readAll);
+  router.get("/categories/:id", readCategory);
+  router.get("/categories", readAllCategory);
   router.post(
     "/categories",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(createCategorySchema),
-    create
+    createCategory
   );
   router.patch(
     "/categories/:id",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editCategorySchema),
-    edit
+    editCategory
   );
   router.delete(
     "/categories/:id",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
-    remove
+    deleteCategory
   );
   return router;
 }

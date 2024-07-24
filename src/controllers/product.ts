@@ -6,12 +6,12 @@ import {
 } from "@/schemas/product";
 import { getCategoryById } from "@/services/category";
 import {
-  createNewProduct,
+  insertProduct,
   getProductByCode,
   getProductById,
   getProductBySlug,
   queryProduct,
-  updateProductById,
+  editProductById,
 } from "@/services/product";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -30,7 +30,7 @@ export async function createProduct(
   const checkCategory = await getCategoryById(categoryId);
   if (!checkCategory) throw new BadRequestError("invalid category");
 
-  const newProduct = await createNewProduct({
+  const newProduct = await insertProduct({
     ...req.body,
     createdById: id,
   });
@@ -39,7 +39,7 @@ export async function createProduct(
     .json({ message: "create product success", product: newProduct });
 }
 
-export async function editProduct(
+export async function updateProduct(
   req: Request<EditProductReq["params"], {}, EditProductReq["body"]>,
   res: Response
 ) {
@@ -60,7 +60,7 @@ export async function editProduct(
     throw new BadRequestError("Category không tồn tại");
   }
 
-  const newProduct = await updateProductById(id, data);
+  const newProduct = await editProductById(id, data);
   return res
     .status(StatusCodes.OK)
     .json({ message: "update product success", product: newProduct });

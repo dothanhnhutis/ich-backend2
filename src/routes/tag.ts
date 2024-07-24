@@ -1,8 +1,8 @@
 import {
-  create,
+  createTag,
   deleteTag,
-  read,
   readAllTag,
+  readTag,
   searchTag,
   updateTag,
 } from "@/controllers/tag";
@@ -34,13 +34,13 @@ function tagRouter(): Router {
     checkPermission(["ADMIN", "MANAGER"]),
     deleteTag
   );
-  router.get("/tags/:id", read);
+  router.get("/tags/:id", readTag);
   router.post(
     "/tags",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(createTagSchema),
-    create
+    createTag
   );
   router.get("/tags", readAllTag);
   return router;

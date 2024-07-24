@@ -10,7 +10,7 @@ export const tagSelectDefault: Prisma.TagSelect = {
 };
 
 // Create
-export async function createNewTag(
+export async function insertTag(
   data: { name: string; slug: string },
   select?: Prisma.TagSelect
 ) {
@@ -121,7 +121,7 @@ export async function queryTag(data?: QueryTagType) {
 }
 
 // Update
-export async function updateTagById(
+export async function editTagById(
   id: string,
   data: { name?: string; slug?: string },
   select?: Prisma.TagSelect

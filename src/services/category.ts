@@ -108,7 +108,7 @@ export async function getCategoryBySlug(
   });
 }
 
-export async function createNewCategory(
+export async function insertCategory(
   data: { name: string; slug: string },
   select?: Prisma.CategorySelect
 ) {
@@ -121,7 +121,7 @@ export async function createNewCategory(
   });
 }
 
-export async function updateCategoryById(
+export async function editCategoryById(
   id: string,
   data: { name?: string; slug?: string },
   select?: Prisma.CategorySelect

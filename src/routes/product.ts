@@ -1,8 +1,8 @@
 import {
   createProduct,
-  editProduct,
   readProduct,
   searchProduct,
+  updateProduct,
 } from "@/controllers/product";
 import checkPermission from "@/middleware/checkPermission";
 import { authMiddleware } from "@/middleware/requiredAuth";
@@ -28,7 +28,7 @@ function productRouter(): Router {
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editProductSchema),
-    editProduct
+    updateProduct
   );
 
   router.get(

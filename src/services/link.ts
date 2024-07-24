@@ -1,8 +1,8 @@
 import prisma from "@/utils/db";
-import { LinkProvider, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 // CREATE
-export async function createGoogleLink(
+export async function insertGoogleLink(
   providerId: string,
   userId: string,
   select?: Prisma.LinkProviderSelect

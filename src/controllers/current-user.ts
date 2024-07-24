@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "@/error-handler";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
-import { getUserByEmail, getUserById, updateUserById } from "@/services/user";
+import { getUserByEmail, getUserById, editUserById } from "@/services/user";
 import configs from "@/configs";
 import { signJWT } from "@/utils/jwt";
 import {
@@ -12,8 +12,7 @@ import {
   editProfileReq,
 } from "@/schemas/current-user";
 import { compareData } from "@/utils/helper";
-import { isBase64Data, uploadImageCloudinary } from "@/utils/image";
-import { z } from "zod";
+import { uploadImageCloudinary } from "@/utils/image";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -32,7 +31,7 @@ export async function resendEmail(req: Request, res: Response) {
   if (!randomCharacters || !date || date.getTime() < Date.now()) {
     randomCharacters = randomBytes.toString("hex");
     date = new Date(Date.now() + 24 * 60 * 60000);
-    await updateUserById(id, {
+    await editUserById(id, {
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
     });
@@ -80,7 +79,7 @@ export async function changePassword(
     throw new BadRequestError("Old password is incorrect");
 
   if (oldPassword != newPassword)
-    await updateUserById(id, {
+    await editUserById(id, {
       password: newPassword,
     });
 
@@ -96,18 +95,17 @@ export async function changeAvatar(
   const { id } = req.session.user!;
   const { type, data } = req.body;
   let url: string;
-  if (type == "base64" && isBase64Data(data)) {
+
+  if (type == "base64") {
     const { secure_url } = await uploadImageCloudinary(data, {
       transformation: [{ width: 640, height: 640, crop: "scale" }],
       tags: ["avatar", id],
     });
     url = secure_url;
-  } else if (type == "url" && z.string().url().safeParse(data).success) {
-    url = data;
   } else {
-    throw new BadRequestError("edit picture fail");
+    url = data;
   }
-  await updateUserById(id, {
+  await editUserById(id, {
     picture: url,
   });
   return res.send({
@@ -117,7 +115,7 @@ export async function changeAvatar(
 
 export async function deactivate(req: Request, res: Response) {
   const { id } = req.session.user!;
-  await updateUserById(id, {
+  await editUserById(id, {
     inActive: false,
   });
   await req.logout();
@@ -131,7 +129,7 @@ export async function editProfile(
   res: Response
 ) {
   const { id } = req.session.user!;
-  await updateUserById(id, req.body);
+  await editUserById(id, req.body);
   return res.status(StatusCodes.OK).json({ message: "Update profile success" });
 }
 
@@ -154,7 +152,7 @@ export async function changeEmail(req: Request, res: Response) {
   const randomCharacters = randomBytes.toString("hex");
   const date = new Date(Date.now() + 24 * 60 * 60000);
 
-  await updateUserById(id, {
+  await editUserById(id, {
     email,
     emailVerified: false,
     emailVerificationExpires: date,
