@@ -136,9 +136,7 @@ export const session =
             Reflect.set(target, p, newValue, receiver);
             req.sessionID = req.sessionID || `${prefix}${genid(req)}`;
           }
-
           changed = true;
-
           if (target.user) {
             res.cookie(name, encrypt(req.sessionID, secret), {
               ...target.cookie,
@@ -149,6 +147,7 @@ export const session =
         },
         get(target, p, receiver) {
           return Reflect.get(target, p, receiver);
+          // return Reflect.get(target, p);
         },
       }
     );

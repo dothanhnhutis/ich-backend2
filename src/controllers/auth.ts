@@ -107,8 +107,31 @@ export async function resetPassword(
 }
 
 const RECOVER_SESSION_NAME = "eid";
-
+// re check
 export async function sendReactivateAccount(req: Request, res: Response) {
+  // const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
+  // let randomCharacters = user.reActiveToken;
+  // let date = user.reActiveExpires;
+  // if (
+  //   !randomCharacters ||
+  //   randomCharacters == "" ||
+  //   !date ||
+  //   date.getTime() <= Date.now()
+  // ) {
+  //   randomCharacters = randomBytes.toString("hex");
+  //   date = new Date(Date.now() + 5 * 60000);
+  //   await editUserById(user.id, {
+  //     reActiveToken: randomCharacters,
+  //     reActiveExpires: date,
+  //   });
+  // }
+  // const token = signJWT(
+  //   {
+  //     session: randomCharacters,
+  //     iat: Math.floor(date.getTime() / 1000),
+  //   },
+  //   configs.JWT_SECRET
+  // );
   //   const cookies = parse(req.get("cookie") || "");
   //   if (!cookies[RECOVER_SESSION_NAME]) throw new NotFoundError();
   //   const existingUser = await getUserByToken(
@@ -146,21 +169,41 @@ export async function signIn(
   res: Response
 ) {
   const { email, password } = req.body;
-  const user = await getUserByEmail(email, { password: true, suspended: true });
+  const user = await getUserByEmail(email, {
+    password: true,
+    suspended: true,
+    inActive: true,
+  });
+  if (!password) {
+    if (!user || !user.inActive)
+      return res.status(StatusCodes.OK).json({
+        message: !user
+          ? "You can use this email to register for an account"
+          : "Your account is active",
+      });
 
-  if (!user || !user.password || !(await compareData(user.password, password)))
-    throw new BadRequestError("Invalid email or password");
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "Your account is currently closed" });
+  } else {
+    if (
+      !user ||
+      !user.password ||
+      !(await compareData(user.password, password))
+    )
+      throw new BadRequestError("Invalid email or password");
 
-  if (user.suspended)
-    throw new BadRequestError(
-      "Your account has been locked please contact the administrator"
-    );
+    if (user.suspended)
+      throw new BadRequestError(
+        "Your account has been locked please contact the administrator"
+      );
 
-  req.session.user = {
-    id: user.id,
-  };
-  req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
-  return res.status(StatusCodes.OK).json({ message: "Sign in success" });
+    req.session.user = {
+      id: user.id,
+    };
+    req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
+    return res.status(StatusCodes.OK).json({ message: "Sign in success" });
+  }
 }
 
 export async function signInWithGoogle(
@@ -239,6 +282,7 @@ export async function signInWithGoogleCallBack(
   }
 }
 
+//suspended
 export async function checkEmailSignIn(
   req: Request<{}, {}, checkEmailSignInReq["body"]>,
   res: Response
