@@ -1,4 +1,4 @@
-import { SendRecoverEmail } from "@/schemas/auth.schema";
+import { RecoverAccountReq } from "@/schemas/auth";
 import { Request } from "express";
 import { rateLimit } from "express-rate-limit";
 // import { CreateContact } from "@/schemas/contact.schema";
@@ -21,7 +21,7 @@ export const rateLimitRecover = rateLimit({
   limit: 1,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  keyGenerator: function (req: Request<{}, {}, SendRecoverEmail["body"]>) {
+  keyGenerator: function (req: Request<{}, {}, RecoverAccountReq["body"]>) {
     return req.body.email;
   },
   handler: (req, res, next, options) => {
@@ -30,7 +30,7 @@ export const rateLimitRecover = rateLimit({
 });
 
 export const rateLimitSendEmail = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 60000,
   limit: 1,
   standardHeaders: "draft-7",
   legacyHeaders: false,

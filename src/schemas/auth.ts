@@ -85,7 +85,7 @@ export const resetPasswordSchema = z.object({
     }),
 });
 
-export const checkEmailSignInSchema = z.object({
+export const sendReActivateAccountSchema = z.object({
   body: z
     .object({
       email: z
@@ -102,4 +102,6 @@ export type SignInReq = z.infer<typeof signinSchema>;
 export type SignUpReq = z.infer<typeof signupSchema>;
 export type RecoverAccountReq = z.infer<typeof recoverAccountSchema>;
 export type ResetPasswordReq = z.infer<typeof resetPasswordSchema>;
-export type checkEmailSignInReq = z.infer<typeof checkEmailSignInSchema>;
+export type SendReActivateAccountReq = z.infer<
+  typeof sendReActivateAccountSchema
+>;

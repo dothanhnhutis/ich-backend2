@@ -12,7 +12,7 @@ import configs from "@/configs";
 import { CustomError, IErrorResponse, NotFoundError } from "@/error-handler";
 import { appRouter } from "@/routes";
 import { initRedis } from "@/redis/connection";
-import { session } from "@/middleware/session";
+import deserializeUser from "./middleware/deserializeUser";
 
 const SERVER_PORT = 4000;
 export class Server {
@@ -38,21 +38,22 @@ export class Server {
       })
     );
     initRedis();
-    app.use(
-      session({
-        secret: configs.SESSION_SECRET,
-        name: configs.SESSION_KEY_NAME,
-        cookie: {
-          path: "/",
-          httpOnly: true,
-          secure: configs.NODE_ENV == "production",
-        },
-        genid: (req) => {
-          const randomId = crypto.randomBytes(10).toString("hex");
-          return `${req.session.user?.id}:${randomId}`;
-        },
-      })
-    );
+    app.use(deserializeUser);
+    // app.use(
+    //   session({
+    //     secret: configs.SESSION_SECRET,
+    //     name: configs.SESSION_KEY_NAME,
+    //     cookie: {
+    //       path: "/",
+    //       httpOnly: true,
+    //       secure: configs.NODE_ENV == "production",
+    //     },
+    //     // genid: (req) => {
+    //     //   const randomId = crypto.randomBytes(10).toString("hex");
+    //     //   return `${req.session.user?.id}:${randomId}`;
+    //     // },
+    //   })
+    // );
   }
 
   private standardMiddleware(app: Application) {

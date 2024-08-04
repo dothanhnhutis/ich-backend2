@@ -69,7 +69,7 @@ export async function getUserByToken(
     case "emailVerification":
       return await prisma.user.findUnique({
         where: {
-          emailVerificationToken: token,
+          emailVerificationToken: data.session,
           emailVerificationExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({
@@ -80,7 +80,7 @@ export async function getUserByToken(
     case "recoverAccount":
       return await prisma.user.findUnique({
         where: {
-          passwordResetToken: token,
+          passwordResetToken: data.session,
           passwordResetExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({
@@ -91,7 +91,7 @@ export async function getUserByToken(
     case "reActivate":
       return await prisma.user.findUnique({
         where: {
-          reActiveToken: token,
+          reActiveToken: data.session,
           reActiveExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({

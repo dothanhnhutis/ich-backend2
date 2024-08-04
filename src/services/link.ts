@@ -1,6 +1,16 @@
 import prisma from "@/utils/db";
 import { Prisma } from "@prisma/client";
 
+const linkSelectDefault: Prisma.LinkProviderSelect = {
+  id: true,
+  user: {
+    select: {
+      id: true,
+      suspended: true,
+      inActive: true,
+    },
+  },
+};
 // CREATE
 export async function insertGoogleLink(
   providerId: string,
@@ -18,6 +28,7 @@ export async function insertGoogleLink(
       },
     },
     select: Prisma.validator<Prisma.LinkProviderSelect>()({
+      ...linkSelectDefault,
       ...select,
     }),
   });
@@ -35,6 +46,7 @@ export async function getGoogleProviderById(
       },
     },
     select: Prisma.validator<Prisma.LinkProviderSelect>()({
+      ...linkSelectDefault,
       ...select,
     }),
   });

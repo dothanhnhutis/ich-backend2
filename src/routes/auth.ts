@@ -1,5 +1,4 @@
 import {
-  checkEmailSignIn,
   reActivateAccount,
   recoverAccount,
   resetPassword,
@@ -14,9 +13,9 @@ import {
 import { rateLimitRecover } from "@/middleware/rateLimit";
 import validateResource from "@/middleware/validateResource";
 import {
-  checkEmailSignInSchema,
   recoverAccountSchema,
   resetPasswordSchema,
+  sendReActivateAccountSchema,
   signinSchema,
   signupSchema,
 } from "@/schemas/auth";
@@ -28,11 +27,6 @@ function authRouter(): Router {
   router.get("/auth/google", signInWithGoogle);
   router.get("/auth/google/callback", signInWithGoogleCallBack);
 
-  router.post(
-    "/auth/account/email",
-    validateResource(checkEmailSignInSchema),
-    checkEmailSignIn
-  ); // re-check
   router.post("/auth/signin", validateResource(signinSchema), signIn);
   router.delete("/auth/signout", signOut);
 
@@ -51,8 +45,12 @@ function authRouter(): Router {
     resetPassword
   );
 
-  router.get("/auth/reactivate/send", sendReactivateAccount); // re-check
-  router.get("/auth/reactivate/:token", reActivateAccount); // re-check
+  router.post(
+    "/auth/reactivate",
+    validateResource(sendReActivateAccountSchema),
+    sendReactivateAccount
+  );
+  router.get("/auth/reactivate/:token", reActivateAccount);
 
   return router;
 }

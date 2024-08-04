@@ -63,3 +63,8 @@ export function decrypt(encrypted: string, secret: string) {
     decipher.update(parts[1], "hex", "utf8") + decipher.final("utf8");
   return decrypted;
 }
+
+export function genid(userId: string) {
+  const randomId = crypto.randomBytes(10).toString("hex");
+  return `${userId}:${randomId}`;
+}

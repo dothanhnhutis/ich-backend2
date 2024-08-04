@@ -11,28 +11,30 @@ import {
   editUserById,
 } from "@/services/user";
 import {
-  checkEmailSignInReq,
   RecoverAccountReq,
   ResetPasswordReq,
+  SendReActivateAccountReq,
   SignInReq,
   SignUpReq,
 } from "@/schemas/auth";
-import { signJWT } from "@/utils/jwt";
+import { signJWT, verifyJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
-import { compareData } from "@/utils/helper";
+import { compareData, encrypt, genid } from "@/utils/helper";
 import { getGoogleProviderById, insertGoogleLink } from "@/services/link";
+import { emaiEnum, sendMail } from "@/utils/nodemailer";
+import { deteleSession, setDataInMilisecond } from "@/redis/cache";
+import { UAParser } from "ua-parser-js";
 
 export async function reActivateAccount(
   req: Request<{ token: string }>,
   res: Response
 ) {
   const { token } = req.params;
-  const user = await await getUserByToken("reActivate", token);
-
+  const user = await getUserByToken("reActivate", token);
   if (!user) throw new NotFoundError();
   await editUserById(user.id, {
-    inActive: true,
+    inActive: false,
     reActiveExpires: new Date(),
     reActiveToken: null,
   });
@@ -106,51 +108,51 @@ export async function resetPassword(
   });
 }
 
-const RECOVER_SESSION_NAME = "eid";
-// re check
-export async function sendReactivateAccount(req: Request, res: Response) {
-  // const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
-  // let randomCharacters = user.reActiveToken;
-  // let date = user.reActiveExpires;
-  // if (
-  //   !randomCharacters ||
-  //   randomCharacters == "" ||
-  //   !date ||
-  //   date.getTime() <= Date.now()
-  // ) {
-  //   randomCharacters = randomBytes.toString("hex");
-  //   date = new Date(Date.now() + 5 * 60000);
-  //   await editUserById(user.id, {
-  //     reActiveToken: randomCharacters,
-  //     reActiveExpires: date,
-  //   });
-  // }
-  // const token = signJWT(
-  //   {
-  //     session: randomCharacters,
-  //     iat: Math.floor(date.getTime() / 1000),
-  //   },
-  //   configs.JWT_SECRET
-  // );
-  //   const cookies = parse(req.get("cookie") || "");
-  //   if (!cookies[RECOVER_SESSION_NAME]) throw new NotFoundError();
-  //   const existingUser = await getUserByToken(
-  //     "reActivate",
-  //     cookies[RECOVER_SESSION_NAME]
-  //   );
-  //   if (!existingUser) throw new NotFoundError();
-  //   const reactivateLink = `${configs.CLIENT_URL}/auth/reactivate?token=${cookies[RECOVER_SESSION_NAME]}`;
+export async function sendReactivateAccount(
+  req: Request<{}, {}, SendReActivateAccountReq["body"]>,
+  res: Response
+) {
+  const user = await getUserByEmail(req.body.email, {
+    reActiveToken: true,
+    reActiveExpires: true,
+  });
+  if (!user) throw new BadRequestError("invalid email");
+  const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
+  let randomCharacters = user.reActiveToken;
+  let date = user.reActiveExpires;
+  if (
+    !randomCharacters ||
+    randomCharacters == "" ||
+    !date ||
+    date.getTime() <= Date.now()
+  ) {
+    randomCharacters = randomBytes.toString("hex");
+    date = new Date(Date.now() + 5 * 60000);
+    await editUserById(user.id, {
+      reActiveToken: randomCharacters,
+      reActiveExpires: date,
+    });
+  }
+  const token = signJWT(
+    {
+      session: randomCharacters,
+      iat: Math.floor(date.getTime() / 1000),
+    },
+    configs.JWT_SECRET
+  );
+  const reactivateLink = `${configs.CLIENT_URL}/auth/reactivate?token=${token}`;
+  console.log(reactivateLink);
   // await sendMail({
   //   template: emaiEnum.REACTIVATE_ACCOUNT,
-  //   receiver: existingUser.email,
+  //   receiver: req.body.email,
   //   locals: {
-  //     username: existingUser.username,
+  //     username: user.username,
   //     reactivateLink,
   //   },
   // });
-  //   return res.clearCookie(RECOVER_SESSION_NAME).status(StatusCodes.OK).send({
-  //     message: "Send email success",
-  //   });
+  return res.status(StatusCodes.OK).send({
+    message: "Send email success",
+  });
 }
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60000;
@@ -198,11 +200,39 @@ export async function signIn(
         "Your account has been locked please contact the administrator"
       );
 
-    req.session.user = {
-      id: user.id,
+    const sessionID = `sid:${genid(user.id)}`;
+    const cookieOpt = {
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      expires: new Date(Date.now() + SESSION_MAX_AGE),
     };
-    req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
-    return res.status(StatusCodes.OK).json({ message: "Sign in success" });
+
+    console.log(req.ip);
+    console.log(req.headers["user-agent"]);
+    console.log(UAParser(req.headers["user-agent"]));
+
+    await setDataInMilisecond(
+      sessionID,
+      JSON.stringify({
+        user: {
+          id: user.id,
+        },
+        cookie: cookieOpt,
+        ip: req.ip || "",
+        userAgent: req.headers["user-agent"] || "",
+      }),
+      Math.abs(cookieOpt.expires.getTime() - Date.now())
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .cookie(
+        configs.SESSION_KEY_NAME,
+        encrypt(sessionID, configs.SESSION_SECRET),
+        cookieOpt
+      )
+      .json({ message: "Sign in success" });
   }
 }
 
@@ -251,10 +281,10 @@ export async function signInWithGoogleCallBack(
             "oauth2",
             JSON.stringify({
               type: "nolink",
-              email: state == "/auth/signin" ? userInfo.email : "",
+              email: state == "/auth1/signin" ? userInfo.email : "",
             }),
             {
-              httpOnly: false,
+              httpOnly: true,
               path: "/auth",
               secure: configs.NODE_ENV == "production",
             }
@@ -270,71 +300,23 @@ export async function signInWithGoogleCallBack(
         "Your account has been locked please contact the administrator"
       );
 
-    if (!googleProvider.user.inActive)
+    if (googleProvider.user.inActive)
       throw new BadRequestError("Your account has been disactivate");
 
-    req.session.user = {
-      id: googleProvider.user.id,
-    };
-    req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
+    // req.session.user = {
+    //   id: googleProvider.user.id,
+    // };
+    // req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
 
     return res.redirect(SUCCESS_REDIRECT);
   }
 }
 
-//suspended
-export async function checkEmailSignIn(
-  req: Request<{}, {}, checkEmailSignInReq["body"]>,
-  res: Response
-) {
-  const { email } = req.body;
-  const user = await getUserByEmail(email);
-
-  if (!user)
-    return res.clearCookie(RECOVER_SESSION_NAME).status(StatusCodes.OK).json({
-      message: "You can use this email to register for an account",
-    });
-
-  if (user.inActive)
-    return res.clearCookie(RECOVER_SESSION_NAME).status(StatusCodes.OK).json({
-      message: "Your account is active",
-    });
-
-  const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
-  let randomCharacters = user.reActiveToken;
-  let date = user.reActiveExpires;
-  if (
-    !randomCharacters ||
-    randomCharacters == "" ||
-    !date ||
-    date.getTime() <= Date.now()
-  ) {
-    randomCharacters = randomBytes.toString("hex");
-    date = new Date(Date.now() + 5 * 60000);
-    await editUserById(user.id, {
-      reActiveToken: randomCharacters,
-      reActiveExpires: date,
-    });
-  }
-
-  const token = signJWT(
-    {
-      session: randomCharacters,
-      iat: Math.floor(date.getTime() / 1000),
-    },
-    configs.JWT_SECRET
-  );
-
-  return res
-    .status(StatusCodes.BAD_REQUEST)
-    .cookie(RECOVER_SESSION_NAME, token, { expires: date })
-    .json({ message: "Your account is currently closed" });
-}
-
 export async function signOut(req: Request, res: Response) {
-  await req.logout();
+  if (req.sessionID) await deteleSession(req.sessionID);
   res
     .status(StatusCodes.OK)
+    .clearCookie(configs.SESSION_KEY_NAME)
     .json({
       message: "Sign out successful",
     })
