@@ -2,7 +2,6 @@ import express, { type Router } from "express";
 import { authMiddleware } from "@/middleware/requiredAuth";
 import { rateLimitSendEmail } from "@/middleware/rateLimit";
 import validateResource from "@/middleware/validateResource";
-import checkPermission from "@/middleware/checkPermission";
 import {
   changeAvatar,
   changeEmail,
@@ -28,6 +27,7 @@ import {
   editUserSchema,
   searchUserSchema,
 } from "@/schemas/user";
+import checkPermission from "@/middleware/checkPermission";
 
 const router: Router = express.Router();
 function userRouter(): Router {

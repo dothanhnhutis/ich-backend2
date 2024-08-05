@@ -13,13 +13,14 @@ import {
 } from "@/schemas/current-user";
 import { compareData } from "@/utils/helper";
 import { uploadImageCloudinary } from "@/utils/image";
+import { deteleSession } from "@/redis/cache";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
 }
 
 export async function resendEmail(req: Request, res: Response) {
-  const { id } = req.session.user!;
+  const { id } = req.user!;
   const user = await getUserById(id);
   if (!user) throw new NotFoundError();
   if (user.emailVerified) throw new NotFoundError();
@@ -92,7 +93,7 @@ export async function changeAvatar(
   req: Request<{}, {}, ChangeAvatarReq["body"]>,
   res: Response
 ) {
-  const { id } = req.session.user!;
+  const { id } = req.user!;
   const { type, data } = req.body;
   let url: string;
 
@@ -114,12 +115,12 @@ export async function changeAvatar(
 }
 
 export async function deactivate(req: Request, res: Response) {
-  const { id } = req.session.user!;
+  const { id } = req.user!;
   await editUserById(id, {
     inActive: false,
   });
-  await req.logout();
-  res.status(StatusCodes.OK).json({
+  if (req.sessionID) await deteleSession(req.sessionID);
+  res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({
     message: "Your account has been disabled. You can reactivate at any time!",
   });
 }
@@ -128,14 +129,14 @@ export async function editProfile(
   req: Request<{}, {}, editProfileReq["body"]>,
   res: Response
 ) {
-  const { id } = req.session.user!;
+  const { id } = req.user!;
   await editUserById(id, req.body);
   return res.status(StatusCodes.OK).json({ message: "Update profile success" });
 }
 
 export async function changeEmail(req: Request, res: Response) {
   const { email } = req.body;
-  const { id } = req.session.user!;
+  const { id } = req.user!;
 
   const user = await getUserById(id);
   if (!user) throw new NotFoundError();

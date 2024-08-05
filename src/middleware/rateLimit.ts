@@ -35,7 +35,7 @@ export const rateLimitSendEmail = rateLimit({
   standardHeaders: "draft-7",
   legacyHeaders: false,
   keyGenerator: function (req: Request) {
-    const currentUser = req.session.user!;
+    const currentUser = req.user!;
     return currentUser.id;
   },
   handler: (req, res, next, options) => {
