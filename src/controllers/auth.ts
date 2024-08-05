@@ -277,18 +277,11 @@ export async function signInWithGoogleCallBack(
       const existAccount = await getUserByEmail(userInfo.email);
       if (existAccount) {
         return res
-          .cookie(
-            "oauth2",
-            JSON.stringify({
-              type: "nolink",
-              email: state == "/auth1/signin" ? userInfo.email : "",
-            }),
-            {
-              httpOnly: true,
-              path: "/auth",
-              secure: configs.NODE_ENV == "production",
-            }
-          )
+          .cookie("registered", userInfo.email, {
+            httpOnly: true,
+            path: "/auth/signin",
+            secure: configs.NODE_ENV == "production",
+          })
           .redirect(`${configs.CLIENT_URL}/auth/signin`);
       }
       const user = await insertUserWithGoogle(userInfo);
@@ -303,12 +296,38 @@ export async function signInWithGoogleCallBack(
     if (googleProvider.user.inActive)
       throw new BadRequestError("Your account has been disactivate");
 
-    // req.session.user = {
-    //   id: googleProvider.user.id,
-    // };
-    // req.session.cookie.expires = new Date(Date.now() + SESSION_MAX_AGE);
+    const sessionID = `sid:${genid(googleProvider.user.id)}`;
+    const cookieOpt = {
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      expires: new Date(Date.now() + SESSION_MAX_AGE),
+    };
 
-    return res.redirect(SUCCESS_REDIRECT);
+    console.log(req.ip);
+    console.log(req.headers["user-agent"]);
+    console.log(UAParser(req.headers["user-agent"]));
+
+    await setDataInMilisecond(
+      sessionID,
+      JSON.stringify({
+        user: {
+          id: googleProvider.user.id,
+        },
+        cookie: cookieOpt,
+        ip: req.ip || "",
+        userAgent: req.headers["user-agent"] || "",
+      }),
+      Math.abs(cookieOpt.expires.getTime() - Date.now())
+    );
+
+    return res
+      .cookie(
+        configs.SESSION_KEY_NAME,
+        encrypt(sessionID, configs.SESSION_SECRET),
+        cookieOpt
+      )
+      .redirect(SUCCESS_REDIRECT);
   }
 }
 

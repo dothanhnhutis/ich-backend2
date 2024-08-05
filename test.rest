@@ -14,8 +14,10 @@ X-Forwarded-For: 84d5:51a0:9114:1855:4cfa:f2d7:1f12:7003
 GET {{hostname}}/users/me HTTP/1.1
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
 X-Forwarded-For: 84d5:51a0:9114:1855:4cfa:f2d7:1f12:7003
-Cookie: session=040798f8e55b430dd9640a94e37630a6.8473284521b5e642b4a5ad46d18b4a339c7204c7d5527ebf3b7565e4750f3b5ec2de90bcc6542b11db71386170f9ff776db1a656b4dd0c3ef11ea369de7c726f; Path=/; Expires=Tue, 03 Sep 2024 15:43:03 GMT; HttpOnly
+Cookie: session=b1d1fed599acb548a24c82a5b0c6e866.22870b661d65e95166b3caf1c76436fe36dabd4eac1c4357e7dc5f5019d772e952c253aa86a8da5dd76ad5b162f2eb59928c8b7d53d5b35dd792f30b47793bc3; Path=/; Expires=Wed, 04 Sep 2024 01:17:02 GMT; HttpOnly
+
 ###
 DELETE  {{hostname}}/auth/signout HTTP/1.1
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
 X-Forwarded-For: 84d5:51a0:9114:1855:4cfa:f2d7:1f12:7003
+Cookie: session=fa5d1a800fdebd2cb9b538c363f11931.878f3e0a25ac643d8430a618ffec389523cbe7a74fd10a613bfa9ae51d2da30e0ecf3984f65b0d1380c81ff7e2753b6fe5a301645e7be96af63c1d5b48692d21; Path=/; Expires=Wed, 04 Sep 2024 01:10:17 GMT; HttpOnly

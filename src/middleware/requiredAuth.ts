@@ -1,8 +1,5 @@
 import { RequestHandler as Middleware } from "express";
 import { NotAuthorizedError, PermissionError } from "../error-handler";
-import { getUserById } from "@/services/user";
-import configs from "@/configs";
-import { deteleSession } from "@/redis/cache";
 
 type AuthMiddlewareCheckType = "emailVerified" | "suspended" | "inActive";
 
@@ -25,5 +22,5 @@ export const authMiddleware =
         );
       }
     }
-    next();
+    return next();
   };

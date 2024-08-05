@@ -1,5 +1,4 @@
 import { CookieOptions, RequestHandler as Middleware } from "express";
-import prisma from "../utils/db";
 import { parse } from "cookie";
 import { decrypt } from "@/utils/helper";
 import configs from "@/configs";
@@ -25,9 +24,9 @@ interface ISession {
 }
 
 const deserializeUser: Middleware = async (req, res, next) => {
-  const cookies = parse(req.get("cookie") || "");
-  if (!cookies[configs.SESSION_KEY_NAME]) next();
-
+  const cookiesString = req.get("cookie");
+  if (!cookiesString) return next();
+  const cookies = parse(cookiesString);
   try {
     req.sessionID = decrypt(
       cookies[configs.SESSION_KEY_NAME],
@@ -49,6 +48,6 @@ const deserializeUser: Middleware = async (req, res, next) => {
   } catch (error) {
     res.clearCookie(configs.SESSION_KEY_NAME);
   }
-  next();
+  return next();
 };
 export default deserializeUser;
