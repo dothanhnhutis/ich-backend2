@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
-import { BadRequestError } from "@/error-handler";
+import { BadRequestError, NotFoundError } from "@/error-handler";
 import { CreateUserReq, EditUserReq, SearchUserReq } from "@/schemas/user";
 import {
   insertUserWithPassword,
@@ -41,6 +41,7 @@ export async function createNewUser(
 
 export async function readUser(req: Request<{ id: string }>, res: Response) {
   const user = await getUserById(req.params.id);
+  if (!user) throw new NotFoundError();
   res.status(StatusCodes.OK).json(user);
 }
 
