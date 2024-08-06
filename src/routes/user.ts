@@ -10,12 +10,13 @@ import {
   editProfile,
   currentUser,
   resendEmail,
+  createPassword,
 } from "@/controllers/current-user";
 import {
   changeAvatarSchema,
   changePasswordSchema,
   editProfileSchema,
-  initPasswordSchema,
+  createPasswordSchema,
 } from "@/schemas/current-user";
 import {
   createNewUser,
@@ -70,8 +71,8 @@ function userRouter(): Router {
   router.post(
     "/users/password",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
-    validateResource(initPasswordSchema),
-    changePassword
+    validateResource(createPasswordSchema),
+    createPassword
   );
   //User
   router.post(

@@ -10,7 +10,7 @@ import {
   ChangeAvatarReq,
   ChangePasswordReq,
   editProfileReq,
-  InitPasswordReq,
+  CreatePasswordReq,
 } from "@/schemas/current-user";
 import { compareData } from "@/utils/helper";
 import { uploadImageCloudinary } from "@/utils/image";
@@ -91,19 +91,20 @@ export async function changePassword(
   });
 }
 
-export async function initPassword(
-  req: Request<{}, {}, InitPasswordReq["body"]>,
+export async function createPassword(
+  req: Request<{}, {}, CreatePasswordReq["body"]>,
   res: Response
 ) {
-  const { id } = req.user!;
+  const { id, hasPassword } = req.user!;
   const { newPassword } = req.body;
+  if (hasPassword) throw new BadRequestError("Password has been initialized");
 
   await editUserById(id, {
     password: newPassword,
   });
 
   return res.status(StatusCodes.OK).json({
-    message: "Init password success",
+    message: "Create password success",
   });
 }
 
@@ -161,7 +162,7 @@ export async function changeEmail(req: Request, res: Response) {
 
   if (email == user.email)
     throw new BadRequestError(
-      "The new email cannot be the same as the old email"
+      "The new password must not be the same as the old password"
     );
 
   const checkNewEmail = await getUserByEmail(email);

@@ -29,7 +29,7 @@ export const changePasswordSchema = z.object({
     }),
 });
 
-export const initPasswordSchema = z.object({
+export const createPasswordSchema = z.object({
   body: z
     .object({
       newPassword: z
@@ -79,6 +79,6 @@ export const editProfileSchema = z.object({
 });
 
 export type ChangePasswordReq = z.infer<typeof changePasswordSchema>;
-export type InitPasswordReq = z.infer<typeof initPasswordSchema>;
+export type CreatePasswordReq = z.infer<typeof createPasswordSchema>;
 export type ChangeAvatarReq = z.infer<typeof changeAvatarSchema>;
 export type editProfileReq = z.infer<typeof editProfileSchema>;
