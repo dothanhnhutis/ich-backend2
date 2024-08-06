@@ -9,6 +9,7 @@ export const authMiddleware =
     if (!req.user) {
       throw new NotAuthorizedError();
     }
+
     if (typesCheck) {
       if (typesCheck.includes("emailVerified") && !req.user.emailVerified) {
         throw new PermissionError("Your email hasn't been verified");

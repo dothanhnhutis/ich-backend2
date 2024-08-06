@@ -10,6 +10,7 @@ import {
   ChangeAvatarReq,
   ChangePasswordReq,
   editProfileReq,
+  InitPasswordReq,
 } from "@/schemas/current-user";
 import { compareData } from "@/utils/helper";
 import { uploadImageCloudinary } from "@/utils/image";
@@ -68,9 +69,10 @@ export async function changePassword(
 ) {
   const { oldPassword, newPassword } = req.body;
   const { id } = req.user!;
-  const userExist = await getUserById(id);
+  const userExist = await getUserById(id, {
+    password: true,
+  });
   if (!userExist) throw new BadRequestError("User not exist");
-
   const isValidOldPassword = await compareData(
     userExist.password!,
     oldPassword
@@ -86,6 +88,22 @@ export async function changePassword(
 
   return res.status(StatusCodes.OK).json({
     message: "Update password success",
+  });
+}
+
+export async function initPassword(
+  req: Request<{}, {}, InitPasswordReq["body"]>,
+  res: Response
+) {
+  const { id } = req.user!;
+  const { newPassword } = req.body;
+
+  await editUserById(id, {
+    password: newPassword,
+  });
+
+  return res.status(StatusCodes.OK).json({
+    message: "Init password success",
   });
 }
 
@@ -114,10 +132,10 @@ export async function changeAvatar(
   });
 }
 
-export async function deactivate(req: Request, res: Response) {
+export async function disactivate(req: Request, res: Response) {
   const { id } = req.user!;
   await editUserById(id, {
-    inActive: false,
+    inActive: true,
   });
   if (req.sessionID) await deteleSession(req.sessionID);
   res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({

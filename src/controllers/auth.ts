@@ -279,7 +279,6 @@ export async function signInWithGoogleCallBack(
         return res
           .cookie("registered", userInfo.email, {
             httpOnly: true,
-            path: "/auth/signin",
             secure: configs.NODE_ENV == "production",
           })
           .redirect(`${configs.CLIENT_URL}/auth/signin`);

@@ -23,8 +23,31 @@ export const changePasswordSchema = z.object({
       message: "Confirm new password don't match",
       path: ["confirmNewPassword"],
     })
-    .refine((data) => data.oldPassword === data.newPassword, {
+    .refine((data) => data.oldPassword !== data.newPassword, {
       message: "The new password and old password must not be the same",
+      path: ["confirmNewPassword"],
+    }),
+});
+
+export const initPasswordSchema = z.object({
+  body: z
+    .object({
+      newPassword: z
+        .string({
+          required_error: "Password field is required",
+          invalid_type_error: "Password field must be string",
+        })
+        .min(8, "Password field is too short")
+        .max(40, "Password field can not be longer than 40 characters")
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]*$/,
+          "Password field must include: letters, numbers and special characters"
+        ),
+      confirmNewPassword: z.string(),
+    })
+    .strict()
+    .refine((data) => data.newPassword === data.confirmNewPassword, {
+      message: "Confirm new password don't match",
       path: ["confirmNewPassword"],
     }),
 });
@@ -56,5 +79,6 @@ export const editProfileSchema = z.object({
 });
 
 export type ChangePasswordReq = z.infer<typeof changePasswordSchema>;
+export type InitPasswordReq = z.infer<typeof initPasswordSchema>;
 export type ChangeAvatarReq = z.infer<typeof changeAvatarSchema>;
 export type editProfileReq = z.infer<typeof editProfileSchema>;

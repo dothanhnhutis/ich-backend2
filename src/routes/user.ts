@@ -6,7 +6,7 @@ import {
   changeAvatar,
   changeEmail,
   changePassword,
-  deactivate,
+  disactivate,
   editProfile,
   currentUser,
   resendEmail,
@@ -15,6 +15,7 @@ import {
   changeAvatarSchema,
   changePasswordSchema,
   editProfileSchema,
+  initPasswordSchema,
 } from "@/schemas/current-user";
 import {
   createNewUser,
@@ -66,6 +67,12 @@ function userRouter(): Router {
     validateResource(changePasswordSchema),
     changePassword
   );
+  router.post(
+    "/users/password",
+    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    validateResource(initPasswordSchema),
+    changePassword
+  );
   //User
   router.post(
     "/users/picture",
@@ -83,9 +90,9 @@ function userRouter(): Router {
   );
   // User
   router.patch(
-    "/users/deactivate",
+    "/users/disactivate",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
-    deactivate
+    disactivate
   );
   // User
   router.patch(

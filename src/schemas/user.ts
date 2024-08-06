@@ -337,7 +337,7 @@ export type User = {
   emailVerificationToken?: string | null;
   username: string;
   picture: string | null;
-  password?: string | null;
+  hasPassword: boolean;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
   role: Role;

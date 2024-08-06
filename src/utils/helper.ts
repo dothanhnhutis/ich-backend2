@@ -7,8 +7,8 @@ export const hashData = (data: string) => {
   return bcryptjs.hashSync(data, salt);
 };
 
-export const compareData = (hash: string, data: string): Promise<boolean> => {
-  return bcryptjs.compare(data, hash).catch((e) => false);
+export const compareData = (hash: string, input: string): Promise<boolean> => {
+  return bcryptjs.compare(input, hash).catch((e) => false);
 };
 
 export function encrypt(text: string, secret: string) {
