@@ -5,8 +5,8 @@ async function seed() {
   await prisma.linkProvider.deleteMany();
   await prisma.blog.deleteMany();
   await prisma.tag.deleteMany();
-  await prisma.category.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
   const user = await prisma.user.createManyAndReturn({
@@ -28,6 +28,24 @@ async function seed() {
         emailVerified: true,
         password: hashData("@Abc123123"),
         username: "gaconght003",
+      },
+      {
+        email: "gaconght004@gmail.com",
+        emailVerified: true,
+        password: hashData("@Abc123123"),
+        username: "gaconght004",
+      },
+      {
+        email: "gaconght005@gmail.com",
+        emailVerified: true,
+        password: hashData("@Abc123123"),
+        username: "gaconght005",
+      },
+      {
+        email: "gaconght006@gmail.com",
+        emailVerified: true,
+        password: hashData("@Abc123123"),
+        username: "gaconght006",
       },
     ],
   });
