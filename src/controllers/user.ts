@@ -23,7 +23,10 @@ export async function searchUser(
     order_by,
     select: {
       password: true,
-      linkProvider: true,
+      linkProviders: true,
+      emailVerified: true,
+      disabled: true,
+      suspended: true,
     },
   });
   return res.status(StatusCodes.OK).json({
@@ -55,7 +58,7 @@ export async function readUser(req: Request<{ id: string }>, res: Response) {
   const user = await getUserById(req.params.id, {
     password: true,
     emailVerified: true,
-    inActive: true,
+    disabled: true,
     suspended: true,
   });
   if (!user) throw new NotFoundError();
@@ -71,7 +74,7 @@ export async function updateUserById(
   const userExist = await getUserById(userId, {
     password: true,
     emailVerified: true,
-    inActive: true,
+    disabled: true,
     suspended: true,
   });
   if (!userExist) throw new BadRequestError("Invalid user id");

@@ -34,7 +34,7 @@ export async function reActivateAccount(
   const user = await getUserByToken("reActivate", token);
   if (!user) throw new NotFoundError();
   await editUserById(user.id, {
-    inActive: false,
+    disabled: false,
     reActiveExpires: new Date(),
     reActiveToken: null,
   });
@@ -174,10 +174,10 @@ export async function signIn(
   const user = await getUserByEmail(email, {
     password: true,
     suspended: true,
-    inActive: true,
+    disabled: true,
   });
   if (!password) {
-    if (!user || !user.inActive)
+    if (!user || !user.disabled)
       return res.status(StatusCodes.OK).json({
         message: !user
           ? "You can use this email to register for an account"
@@ -292,7 +292,7 @@ export async function signInWithGoogleCallBack(
         "Your account has been locked please contact the administrator"
       );
 
-    if (googleProvider.user.inActive)
+    if (googleProvider.user.disabled)
       throw new BadRequestError("Your account has been disactivate");
 
     const sessionID = `sid:${genid(googleProvider.user.id)}`;

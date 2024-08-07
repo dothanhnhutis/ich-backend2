@@ -14,14 +14,14 @@ const router: Router = express.Router();
 function blogRouter(): Router {
   router.post(
     "/blogs",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER", "BLOGER"]),
     validateResource(createBlogSchema),
     createBlog
   );
   router.patch(
     "/blogs/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER", "BLOGER"]),
     validateResource(createBlogSchema),
     updateBlog

@@ -110,7 +110,7 @@ type QueryUserWhereType = {
   username?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
-  inActive?: boolean | undefined;
+  disabled?: boolean | undefined;
   suspended?: boolean | undefined;
 };
 
@@ -119,7 +119,7 @@ type QueryUserOrderByType = {
   username?: "asc" | "desc";
   role?: "asc" | "desc";
   emailVerified?: "asc" | "desc";
-  inActive?: "asc" | "desc";
+  disabled?: "asc" | "desc";
   suspended?: "asc" | "desc";
   createdAt?: "asc" | "desc";
   updatedAt?: "asc" | "desc";
@@ -148,7 +148,7 @@ export async function queueUser(data?: QueryUserType) {
     skip,
   };
   if (data?.where) {
-    const { id, email, role, username, emailVerified, inActive, suspended } =
+    const { id, email, role, username, emailVerified, disabled, suspended } =
       data.where;
     args.where = {
       username: {
@@ -165,7 +165,7 @@ export async function queueUser(data?: QueryUserType) {
         notIn: ["ADMIN"],
       },
       emailVerified: emailVerified,
-      inActive: inActive,
+      disabled: disabled,
       suspended: suspended,
     };
   }
@@ -195,7 +195,7 @@ export async function insertUserWithPassword(
     password: string;
     username: string;
     role?: CreateUserReq["body"]["role"];
-    inActive?: boolean;
+    disabled?: boolean;
   },
   select?: Prisma.UserSelect
 ) {
@@ -212,7 +212,7 @@ export async function insertUserWithPassword(
       username: data.username,
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
-      inActive: data.inActive || false,
+      disabled: data.disabled || false,
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,
@@ -287,7 +287,7 @@ type UpdateUserByIdData = {
   emailVerified?: boolean;
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
-  inActive?: boolean;
+  disabled?: boolean;
   reActiveExpires?: Date | null;
   reActiveToken?: string | null;
   picture?: string | null;

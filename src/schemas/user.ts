@@ -7,7 +7,7 @@ const roleRegex =
   /^((MANAGER|SALER|BLOGER|CUSTOMER)(\,))*?(MANAGER|SALER|BLOGER|CUSTOMER)$/;
 const trueFalseRegex = /^(0|1|true|false)$/;
 const userOrderByRegex =
-  /^((email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|inActive|suspended|createdAt|updatedAt)\.(asc|desc)$/;
+  /^((email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)$/;
 
 export const creatUserSchema = z.object({
   body: z
@@ -36,9 +36,9 @@ export const creatUserSchema = z.object({
           "Password field must include: letters, numbers and special characters"
         ),
       role: z.enum(roles),
-      inActive: z.boolean({
-        required_error: "inActive field is required",
-        invalid_type_error: "inActive field must be boolean",
+      disabled: z.boolean({
+        required_error: "disabled field is required",
+        invalid_type_error: "disabled field must be boolean",
       }),
     })
     .strict(),
@@ -107,21 +107,21 @@ export const searchUserSchema = z.object({
               : undefined;
           }
         }),
-      inActive: z
+      disabled: z
         .string()
         .or(z.array(z.string()))
-        .transform((inActive) => {
-          if (Array.isArray(inActive)) {
-            const hasInActive = inActive
+        .transform((disabled) => {
+          if (Array.isArray(disabled)) {
+            const hasdisabled = disabled
               .filter((val) => trueFalseRegex.test(val))
               .filter((val, index, arr) => arr.indexOf(val) === index)
               .reverse()[0];
-            return hasInActive
-              ? hasInActive == "1" || hasInActive == "true"
+            return hasdisabled
+              ? hasdisabled == "1" || hasdisabled == "true"
               : undefined;
           } else {
-            return trueFalseRegex.test(inActive)
-              ? inActive == "1" || inActive == "true"
+            return trueFalseRegex.test(disabled)
+              ? disabled == "1" || disabled == "true"
               : undefined;
           }
         }),
@@ -230,8 +230,8 @@ export const searchUserSchema = z.object({
       emailVerified: z.boolean({
         invalid_type_error: "EmailVerified must be boolean",
       }),
-      inActive: z.boolean({
-        invalid_type_error: "InActive must be boolean",
+      disabled: z.boolean({
+        invalid_type_error: "disabled must be boolean",
       }),
       suspended: z.boolean({
         invalid_type_error: "Suspended must be boolean",
@@ -252,8 +252,8 @@ export const searchUserSchema = z.object({
               emailVerified: z.enum(["asc", "desc"], {
                 message: "orderBy emailVerified must be enum 'asc'|'desc'",
               }),
-              inActive: z.enum(["asc", "desc"], {
-                message: "orderBy inActive must be enum 'asc'|'desc'",
+              disabled: z.enum(["asc", "desc"], {
+                message: "orderBy disabled must be enum 'asc'|'desc'",
               }),
               suspended: z.enum(["asc", "desc"], {
                 message: "orderBy suspended must be enum 'asc'|'desc'",
@@ -274,7 +274,7 @@ export const searchUserSchema = z.object({
               },
               {
                 message:
-                  "Each object must have exactly one key, either 'email'|'role'|'emailVerified'|'inActive'|'suspended'|'createdAt'|'updatedAt'",
+                  "Each object must have exactly one key, either 'email'|'role'|'emailVerified'|'disabled'|'suspended'|'createdAt'|'updatedAt'",
               }
             )
         )
@@ -308,9 +308,9 @@ export const editUserSchema = z.object({
         })
         .min(1, "username can't be empty"),
       role: z.enum(roles),
-      inActive: z.boolean({
-        required_error: "inActive field is required",
-        invalid_type_error: "inActive field must be boolean",
+      disabled: z.boolean({
+        required_error: "disabled field is required",
+        invalid_type_error: "disabled field must be boolean",
       }),
       suspended: z.boolean({
         required_error: "suspended field is required",
@@ -346,7 +346,7 @@ export type User = {
   passwordResetExpires?: Date | null;
   role: Role;
   suspended: boolean;
-  inActive: boolean;
+  disabled: boolean;
   reActiveToken?: string | null;
   reActiveExpires?: Date | null;
   phone?: string | null;

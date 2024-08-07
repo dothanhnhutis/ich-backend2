@@ -7,7 +7,7 @@ const linkSelectDefault: Prisma.LinkProviderSelect = {
     select: {
       id: true,
       suspended: true,
-      inActive: true,
+      disabled: true,
     },
   },
 };

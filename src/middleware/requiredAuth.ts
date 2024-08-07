@@ -1,7 +1,7 @@
 import { RequestHandler as Middleware } from "express";
 import { NotAuthorizedError, PermissionError } from "../error-handler";
 
-type AuthMiddlewareCheckType = "emailVerified" | "suspended" | "inActive";
+type AuthMiddlewareCheckType = "emailVerified" | "suspended" | "disabled";
 
 export const authMiddleware =
   (typesCheck?: AuthMiddlewareCheckType[]): Middleware =>
@@ -14,12 +14,12 @@ export const authMiddleware =
       if (typesCheck.includes("emailVerified") && !req.user.emailVerified) {
         throw new PermissionError("Your email hasn't been verified");
       }
-      if (typesCheck.includes("inActive") && req.user.inActive) {
-        throw new PermissionError();
+      if (typesCheck.includes("suspended") && req.user.disabled) {
+        throw new PermissionError("Your account has been suspended.");
       }
-      if (typesCheck.includes("suspended") && req.user.suspended) {
+      if (typesCheck.includes("disabled") && req.user.suspended) {
         throw new PermissionError(
-          "Your account has been locked please contact the administrator"
+          "Your account has been disabled. Please contact your administrator to restore your account"
         );
       }
     }

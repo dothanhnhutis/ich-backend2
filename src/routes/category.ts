@@ -21,7 +21,7 @@ const router: Router = express.Router();
 function categoryRouter(): Router {
   router.get(
     "/categories/_search",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(searchCategorySchema),
     searchCategory
@@ -30,21 +30,21 @@ function categoryRouter(): Router {
   router.get("/categories", readAllCategory);
   router.post(
     "/categories",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(createCategorySchema),
     createCategory
   );
   router.patch(
     "/categories/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editCategorySchema),
     editCategory
   );
   router.delete(
     "/categories/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     deleteCategory
   );

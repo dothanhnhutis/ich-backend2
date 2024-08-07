@@ -136,7 +136,7 @@ export async function changeAvatar(
 export async function disactivate(req: Request, res: Response) {
   const { id } = req.user!;
   await editUserById(id, {
-    inActive: true,
+    disabled: true,
   });
   if (req.sessionID) await deteleSession(req.sessionID);
   res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({

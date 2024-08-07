@@ -16,28 +16,28 @@ const router: Router = express.Router();
 function tagRouter(): Router {
   router.get(
     "/tags/_search",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(searchTagSchema),
     searchTag
   );
   router.patch(
     "/tags/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editTagSchema),
     updateTag
   );
   router.delete(
     "/tags/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     deleteTag
   );
   router.get("/tags/:id", readTag);
   router.post(
     "/tags",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(createTagSchema),
     createTag

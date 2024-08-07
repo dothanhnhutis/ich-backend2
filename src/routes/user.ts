@@ -36,20 +36,20 @@ function userRouter(): Router {
   // User
   router.get(
     "/users/me",
-    authMiddleware(["inActive", "suspended"]),
+    authMiddleware(["disabled", "suspended"]),
     currentUser
   );
   // User
   router.get(
     "/users/resend-email",
-    authMiddleware(["inActive", "suspended"]),
+    authMiddleware(["disabled", "suspended"]),
     rateLimitSendEmail,
     resendEmail
   );
   // Admin
   router.get(
     "/users/_search",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN"]),
     validateResource(searchUserSchema),
     searchUser
@@ -57,34 +57,34 @@ function userRouter(): Router {
   // Admin
   router.get(
     "/users/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN"]),
     readUser
   );
   //User
   router.post(
     "/users/change-password",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(changePasswordSchema),
     changePassword
   );
   router.post(
     "/users/password",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(createPasswordSchema),
     createPassword
   );
   //User
   router.post(
     "/users/picture",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(changeAvatarSchema),
     changeAvatar
   );
   //Admin
   router.post(
     "/users",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN"]),
     validateResource(creatUserSchema),
     createNewUser
@@ -92,19 +92,19 @@ function userRouter(): Router {
   // User
   router.patch(
     "/users/disactivate",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     disactivate
   );
   // User
   router.patch(
     "/users/change-email",
-    authMiddleware(["inActive", "suspended"]),
+    authMiddleware(["disabled", "suspended"]),
     changeEmail
   );
   //Admin
   router.patch(
     "/users/:userId",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN"]),
     validateResource(editUserSchema),
     updateUserById
@@ -112,7 +112,7 @@ function userRouter(): Router {
   // User
   router.patch(
     "/users",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(editProfileSchema),
     editProfile
   );

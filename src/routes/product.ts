@@ -18,14 +18,14 @@ const router: Router = express.Router();
 function productRouter(): Router {
   router.post(
     "/products/",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(createProductSchema),
     createProduct
   );
   router.patch(
     "/products/:id",
-    authMiddleware(["emailVerified", "inActive", "suspended"]),
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
     checkPermission(["ADMIN", "MANAGER"]),
     validateResource(editProductSchema),
     updateProduct
