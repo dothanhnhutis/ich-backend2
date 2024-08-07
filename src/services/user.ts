@@ -142,6 +142,7 @@ export async function queueUser(data?: QueryUserType) {
     where: {},
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,
+      ...data?.select,
     }),
     take,
     skip,
@@ -168,9 +169,7 @@ export async function queueUser(data?: QueryUserType) {
       suspended: suspended,
     };
   }
-  if (data?.select) {
-    args.select = data.select;
-  }
+
   if (data?.order_by) {
     args.orderBy = data.order_by;
   }
@@ -196,6 +195,7 @@ export async function insertUserWithPassword(
     password: string;
     username: string;
     role?: CreateUserReq["body"]["role"];
+    inActive?: boolean;
   },
   select?: Prisma.UserSelect
 ) {
@@ -212,6 +212,7 @@ export async function insertUserWithPassword(
       username: data.username,
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
+      inActive: data.inActive || false,
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,

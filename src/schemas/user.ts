@@ -36,6 +36,10 @@ export const creatUserSchema = z.object({
           "Password field must include: letters, numbers and special characters"
         ),
       role: z.enum(roles),
+      inActive: z.boolean({
+        required_error: "inActive field is required",
+        invalid_type_error: "inActive field must be boolean",
+      }),
     })
     .strict(),
 });

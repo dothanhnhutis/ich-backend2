@@ -16,14 +16,26 @@ export async function searchUser(
   res: Response
 ) {
   const { page, limit, order_by, ...where } = req.body || req.query || {};
-  return res.status(StatusCodes.OK).json(
-    await queueUser({
-      where,
-      page,
-      limit,
-      order_by,
-    })
-  );
+  const { users, metadata } = await queueUser({
+    where,
+    page,
+    limit,
+    order_by,
+    select: {
+      password: true,
+      linkProvider: true,
+    },
+  });
+  return res.status(StatusCodes.OK).json({
+    users: users.map((user) => {
+      const { password, ...props } = user;
+      return {
+        ...props,
+        hasPassword: password ? true : false,
+      };
+    }),
+    metadata,
+  });
 }
 
 export async function createNewUser(
@@ -40,7 +52,12 @@ export async function createNewUser(
 }
 
 export async function readUser(req: Request<{ id: string }>, res: Response) {
-  const user = await getUserById(req.params.id);
+  const user = await getUserById(req.params.id, {
+    password: true,
+    emailVerified: true,
+    inActive: true,
+    suspended: true,
+  });
   if (!user) throw new NotFoundError();
   res.status(StatusCodes.OK).json(user);
 }
@@ -51,7 +68,12 @@ export async function updateUserById(
 ) {
   const { userId } = req.params;
   const data = req.body;
-  const userExist = await getUserById(userId);
+  const userExist = await getUserById(userId, {
+    password: true,
+    emailVerified: true,
+    inActive: true,
+    suspended: true,
+  });
   if (!userExist) throw new BadRequestError("Invalid user id");
   await editUserById(userId, data);
   res.status(StatusCodes.OK).json({

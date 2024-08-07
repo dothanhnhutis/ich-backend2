@@ -103,7 +103,7 @@ function userRouter(): Router {
   );
   //Admin
   router.patch(
-    "/users/:id",
+    "/users/:userId",
     authMiddleware(["emailVerified", "inActive", "suspended"]),
     checkPermission(["ADMIN"]),
     validateResource(editUserSchema),
