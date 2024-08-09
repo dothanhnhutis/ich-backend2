@@ -37,8 +37,7 @@ const deserializeUser: Middleware = async (req, res, next) => {
     const user = await getUserById(cookieJson.user.id, {
       password: true,
       emailVerified: true,
-      disabled: true,
-      suspended: true,
+      status: true,
     });
 
     if (user) {

@@ -15,14 +15,14 @@ function blogRouter(): Router {
   router.post(
     "/blogs",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER", "BLOGER"]),
+    checkPermission(["Admin", "Manager", "Bloger"]),
     validateResource(createBlogSchema),
     createBlog
   );
   router.patch(
     "/blogs/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER", "BLOGER"]),
+    checkPermission(["Admin", "Manager", "Bloger"]),
     validateResource(createBlogSchema),
     updateBlog
   );

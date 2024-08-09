@@ -162,7 +162,7 @@ export async function queueUser(data?: QueryUserType) {
       },
       role: {
         in: role,
-        notIn: ["ADMIN"],
+        notIn: ["Admin"],
       },
       emailVerified: emailVerified,
       disabled: disabled,
@@ -200,7 +200,7 @@ export async function insertUserWithPassword(
 
   const user = await prisma.user.create({
     data: {
-      role: data.role || "CUSTOMER",
+      role: data.role || "Customer",
       email: data.email,
       password: hash,
       username: data.username,

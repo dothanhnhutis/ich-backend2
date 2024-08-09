@@ -10,7 +10,7 @@ export interface IError {
   message: string;
 }
 
-export abstract class CustomError extends Error {
+export abstract class Customerror extends Error {
   abstract statusCode: number;
   constructor(message: string) {
     super(message);
@@ -22,7 +22,7 @@ export abstract class CustomError extends Error {
   }
 }
 
-export class BadRequestError extends CustomError {
+export class BadRequestError extends Customerror {
   statusCode: number = StatusCodes.BAD_REQUEST;
 
   constructor(public message: string) {
@@ -30,7 +30,7 @@ export class BadRequestError extends CustomError {
   }
 }
 
-export class NotAuthorizedError extends CustomError {
+export class NotAuthorizedError extends Customerror {
   statusCode: number = StatusCodes.UNAUTHORIZED;
 
   constructor() {
@@ -38,7 +38,7 @@ export class NotAuthorizedError extends CustomError {
   }
 }
 
-export class NotFoundError extends CustomError {
+export class NotFoundError extends Customerror {
   statusCode: number = StatusCodes.NOT_FOUND;
 
   constructor() {
@@ -46,7 +46,7 @@ export class NotFoundError extends CustomError {
   }
 }
 
-export class PermissionError extends CustomError {
+export class PermissionError extends Customerror {
   statusCode: number = StatusCodes.FORBIDDEN;
 
   constructor(message?: string) {
@@ -54,7 +54,7 @@ export class PermissionError extends CustomError {
   }
 }
 
-export class RedisError extends CustomError {
+export class RedisError extends Customerror {
   statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR;
 
   constructor(public message: string, statusCode: number) {

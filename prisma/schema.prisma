@@ -10,8 +10,8 @@ datasource db {
 
 model LinkProvider {
   id         String @id @default(uuid())
-  providerId String @default("")
-  provider   String @default("credential")
+  providerId String
+  provider   String
   userId     String
   user       User   @relation(fields: [userId], references: [id])
 
@@ -20,11 +20,17 @@ model LinkProvider {
 }
 
 enum Role {
-  ADMIN
-  MANAGER
-  SALER
-  BLOGER
-  CUSTOMER
+  Admin
+  Manager
+  Saler
+  Bloger
+  Customer
+}
+
+enum Status {
+  Active
+  Suspended
+  Disabled
 }
 
 model User {
@@ -38,9 +44,8 @@ model User {
   password                 String?
   passwordResetToken       String?        @unique
   passwordResetExpires     DateTime? //4h
-  role                     Role           @default(CUSTOMER)
-  suspended                Boolean        @default(false)
-  disabled                 Boolean        @default(false)
+  role                     Role           @default(Customer)
+  status                   Status         @default(Active)
   reActiveToken            String?        @unique
   reActiveExpires          DateTime? //4h
   phone                    String?

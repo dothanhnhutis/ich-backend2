@@ -50,7 +50,7 @@ function userRouter(): Router {
   router.get(
     "/users/_search",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN"]),
+    checkPermission(["Admin"]),
     validateResource(searchUserSchema),
     searchUser
   );
@@ -58,7 +58,7 @@ function userRouter(): Router {
   router.get(
     "/users/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN"]),
+    checkPermission(["Admin"]),
     readUser
   );
   //User
@@ -85,7 +85,7 @@ function userRouter(): Router {
   router.post(
     "/users",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN"]),
+    checkPermission(["Admin"]),
     validateResource(creatUserSchema),
     createNewUser
   );
@@ -105,7 +105,7 @@ function userRouter(): Router {
   router.patch(
     "/users/:userId",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN"]),
+    checkPermission(["Admin"]),
     validateResource(editUserSchema),
     updateUserById
   );

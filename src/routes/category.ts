@@ -22,7 +22,7 @@ function categoryRouter(): Router {
   router.get(
     "/categories/_search",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(searchCategorySchema),
     searchCategory
   );
@@ -31,21 +31,21 @@ function categoryRouter(): Router {
   router.post(
     "/categories",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(createCategorySchema),
     createCategory
   );
   router.patch(
     "/categories/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(editCategorySchema),
     editCategory
   );
   router.delete(
     "/categories/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     deleteCategory
   );
   return router;

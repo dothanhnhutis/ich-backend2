@@ -19,14 +19,14 @@ function productRouter(): Router {
   router.post(
     "/products/",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(createProductSchema),
     createProduct
   );
   router.patch(
     "/products/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(editProductSchema),
     updateProduct
   );

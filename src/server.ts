@@ -9,7 +9,7 @@ import { StatusCodes } from "http-status-codes";
 import crypto from "crypto";
 
 import configs from "@/configs";
-import { CustomError, IErrorResponse, NotFoundError } from "@/error-handler";
+import { Customerror, IErrorResponse, NotFoundError } from "@/error-handler";
 import { appRouter } from "@/routes";
 import { initRedis } from "@/redis/connection";
 import deserializeUser from "./middleware/deserializeUser";
@@ -79,7 +79,7 @@ export class Server {
         res: Response,
         next: NextFunction
       ) => {
-        if (error instanceof CustomError) {
+        if (error instanceof Customerror) {
           if (error.statusCode == StatusCodes.UNAUTHORIZED) {
             res.clearCookie("session");
           }

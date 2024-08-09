@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-const roles = ["MANAGER", "SALER", "BLOGER", "CUSTOMER"] as const;
+const roles = ["Manager", "Saler", "Bloger", "Customer"] as const;
 const emailRegex =
   /^((([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))(\,))*?(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const roleRegex =
-  /^((MANAGER|SALER|BLOGER|CUSTOMER)(\,))*?(MANAGER|SALER|BLOGER|CUSTOMER)$/;
+  /^((Manager|Saler|Bloger|Customer)(\,))*?(Manager|Saler|Bloger|Customer)$/;
 const trueFalseRegex = /^(0|1|true|false)$/;
 const userOrderByRegex =
   /^((email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)$/;
@@ -36,18 +36,7 @@ export const creatUserSchema = z.object({
           "Password field must include: letters, numbers and special characters"
         ),
       role: z.enum(roles),
-      suspended: z
-        .boolean({
-          required_error: "suspended field is required",
-          invalid_type_error: "suspended field must be boolean",
-        })
-        .optional(),
-      disabled: z
-        .boolean({
-          required_error: "disabled field is required",
-          invalid_type_error: "disabled field must be boolean",
-        })
-        .optional(),
+      status: z.enum(["Active", "Suspended", "Disabled"]),
     })
     .strict(),
 });
@@ -337,7 +326,8 @@ export const editUserSchema = z.object({
     .partial(),
 });
 
-export type Role = CreateUserReq["body"]["role"] | "ADMIN";
+export type Role = CreateUserReq["body"]["role"] | "Admin";
+export type UserStatus = CreateUserReq["body"]["status"];
 export type CreateUserReq = z.infer<typeof creatUserSchema>;
 export type SearchUserReq = z.infer<typeof searchUserSchema>;
 export type EditUserReq = z.infer<typeof editUserSchema>;
@@ -353,8 +343,7 @@ export type User = {
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
   role: Role;
-  suspended: boolean;
-  disabled: boolean;
+  status: UserStatus;
   reActiveToken?: string | null;
   reActiveExpires?: Date | null;
   phone?: string | null;

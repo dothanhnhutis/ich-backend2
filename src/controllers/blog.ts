@@ -47,7 +47,7 @@ export async function updateBlog(
   if (!existBlog) throw new BadRequestError("Blog not exist");
 
   if (
-    role == "BLOGER" &&
+    role == "Bloger" &&
     (existBlog.authorId != userId || (authorId && authorId != userId))
   )
     throw new PermissionError();
@@ -63,11 +63,11 @@ export async function updateBlog(
   }
 
   if (authorId) {
-    const roles: Role[] = ["ADMIN", "MANAGER", "BLOGER"];
+    const roles: Role[] = ["Admin", "Manager", "Bloger"];
     const newAuthor = await getUserById(authorId);
     if (!newAuthor || !roles.includes(newAuthor.role))
       throw new BadRequestError("invalid author");
-    if (role == "MANAGER" && newAuthor.role == "ADMIN")
+    if (role == "Manager" && newAuthor.role == "Admin")
       throw new PermissionError();
   }
 

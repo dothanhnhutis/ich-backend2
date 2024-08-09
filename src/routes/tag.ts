@@ -17,28 +17,28 @@ function tagRouter(): Router {
   router.get(
     "/tags/_search",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(searchTagSchema),
     searchTag
   );
   router.patch(
     "/tags/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(editTagSchema),
     updateTag
   );
   router.delete(
     "/tags/:id",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     deleteTag
   );
   router.get("/tags/:id", readTag);
   router.post(
     "/tags",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
-    checkPermission(["ADMIN", "MANAGER"]),
+    checkPermission(["Admin", "Manager"]),
     validateResource(createTagSchema),
     createTag
   );
