@@ -190,13 +190,7 @@ export async function queueUser(data?: QueryUserType) {
 }
 // Create
 export async function insertUserWithPassword(
-  data: {
-    email: string;
-    password: string;
-    username: string;
-    role?: CreateUserReq["body"]["role"];
-    disabled?: boolean;
-  },
+  data: CreateUserReq["body"],
   select?: Prisma.UserSelect
 ) {
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
@@ -212,7 +206,8 @@ export async function insertUserWithPassword(
       username: data.username,
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
-      disabled: data.disabled || false,
+      disabled: data.disabled,
+      suspended: data.suspended,
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,

@@ -36,10 +36,18 @@ export const creatUserSchema = z.object({
           "Password field must include: letters, numbers and special characters"
         ),
       role: z.enum(roles),
-      disabled: z.boolean({
-        required_error: "disabled field is required",
-        invalid_type_error: "disabled field must be boolean",
-      }),
+      suspended: z
+        .boolean({
+          required_error: "suspended field is required",
+          invalid_type_error: "suspended field must be boolean",
+        })
+        .optional(),
+      disabled: z
+        .boolean({
+          required_error: "disabled field is required",
+          invalid_type_error: "disabled field must be boolean",
+        })
+        .optional(),
     })
     .strict(),
 });
