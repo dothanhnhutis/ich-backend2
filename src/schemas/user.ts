@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { signupSchema } from "./auth";
 
 const roles = ["Manager", "Saler", "Bloger", "Customer"] as const;
 const emailRegex =
@@ -10,33 +11,10 @@ const userOrderByRegex =
   /^((email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)$/;
 
 export const creatUserSchema = z.object({
-  body: z
-    .object({
-      username: z
-        .string({
-          required_error: "username field is required",
-          invalid_type_error: "username field must be string",
-        })
-        .min(1, "username can't be empty"),
-      email: z
-        .string({
-          required_error: "Email field is required",
-          invalid_type_error: "Email field must be string",
-        })
-        .email("Invalid email"),
-      password: z
-        .string({
-          required_error: "Password field is required",
-          invalid_type_error: "Password field must be string",
-        })
-        .min(8, "Password field is too short")
-        .max(40, "Password field can not be longer than 40 characters")
-        .regex(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]*$/,
-          "Password field must include: letters, numbers and special characters"
-        ),
-      role: z.enum(roles),
-      status: z.enum(["Active", "Suspended", "Disabled"]),
+  body: signupSchema.shape.body
+    .extend({
+      role: z.enum(roles).optional(),
+      status: z.enum(["Active", "Suspended", "Disabled"]).optional(),
     })
     .strict(),
 });
@@ -79,10 +57,10 @@ export const searchUserSchema = z.object({
               .split(",")
               .filter(
                 (val, index, arr) => arr.indexOf(val) === index
-              ) as CreateUserReq["body"]["role"][];
+              ) as Role[];
           } else {
             return roleRegex.test(role)
-              ? (role.split(",") as CreateUserReq["body"]["role"][])
+              ? (role.split(",") as Role[])
               : undefined;
           }
         }),
@@ -325,9 +303,8 @@ export const editUserSchema = z.object({
     .strip()
     .partial(),
 });
-
-export type Role = CreateUserReq["body"]["role"] | "Admin";
-export type UserStatus = CreateUserReq["body"]["status"];
+export type Role = "Admin" | "Manager" | "Saler" | "Bloger" | "Customer";
+export type UserStatus = "Active" | "Suspended" | "Disabled";
 export type CreateUserReq = z.infer<typeof creatUserSchema>;
 export type SearchUserReq = z.infer<typeof searchUserSchema>;
 export type EditUserReq = z.infer<typeof editUserSchema>;

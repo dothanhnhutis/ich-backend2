@@ -25,18 +25,11 @@ export async function searchUser(
       password: true,
       linkProviders: true,
       emailVerified: true,
-      disabled: true,
-      suspended: true,
+      status: true,
     },
   });
   return res.status(StatusCodes.OK).json({
-    users: users.map((user) => {
-      const { password, ...props } = user;
-      return {
-        ...props,
-        hasPassword: password ? true : false,
-      };
-    }),
+    users,
     metadata,
   });
 }
@@ -56,10 +49,8 @@ export async function createNewUser(
 
 export async function readUser(req: Request<{ id: string }>, res: Response) {
   const user = await getUserById(req.params.id, {
-    password: true,
     emailVerified: true,
-    disabled: true,
-    suspended: true,
+    status: true,
   });
   if (!user) throw new NotFoundError();
   res.status(StatusCodes.OK).json(user);
@@ -72,10 +63,8 @@ export async function updateUserById(
   const { userId } = req.params;
   const data = req.body;
   const userExist = await getUserById(userId, {
-    password: true,
     emailVerified: true,
-    disabled: true,
-    suspended: true,
+    status: true,
   });
   if (!userExist) throw new BadRequestError("Invalid user id");
   await editUserById(userId, data);

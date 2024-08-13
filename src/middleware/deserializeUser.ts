@@ -41,12 +41,7 @@ const deserializeUser: Middleware = async (req, res, next) => {
     });
 
     if (user) {
-      const { password, ...props } = user;
-      const hasPassword = password ? true : false;
-      req.user = {
-        ...props,
-        hasPassword,
-      };
+      req.user = user;
     } else {
       res.clearCookie(configs.SESSION_KEY_NAME);
       await deteleSession(req.sessionID);

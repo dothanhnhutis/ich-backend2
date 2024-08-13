@@ -41,6 +41,7 @@ model User {
   emailVerificationToken   String?        @unique
   username                 String
   picture                  String?
+  hasPassword              Boolean        @default(false)
   password                 String?
   passwordResetToken       String?        @unique
   passwordResetExpires     DateTime? //4h

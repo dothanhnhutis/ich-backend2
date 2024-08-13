@@ -4,9 +4,9 @@ import { Role } from "@/schemas/user";
 
 const checkPermission =
   (roles: Role[]): Middleware =>
-  async (req, res, next) => {
+  async (req, _, next) => {
     if (!req.user || !roles.includes(req.user.role))
       throw new PermissionError();
-    next();
+    return next();
   };
 export default checkPermission;

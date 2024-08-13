@@ -34,7 +34,7 @@ export async function reActivateAccount(
   const user = await getUserByToken("reActivate", token);
   if (!user) throw new NotFoundError();
   await editUserById(user.id, {
-    disabled: false,
+    status: "Active",
     reActiveExpires: new Date(),
     reActiveToken: null,
   });
@@ -49,7 +49,9 @@ export async function recoverAccount(
   res: Response
 ) {
   const { email } = req.body;
-  const existingUser = await getUserByEmail(email);
+  const existingUser = await getUserByEmail(email, {
+    emailVerified: true,
+  });
   if (!existingUser) throw new BadRequestError("Invalid email");
   if (!existingUser.emailVerified)
     throw new BadRequestError(
@@ -76,14 +78,14 @@ export async function recoverAccount(
     configs.JWT_SECRET
   );
   const recoverLink = `${configs.CLIENT_URL}/auth/reset-password?token=${token}`;
-  // await sendMail({
-  //   template: emaiEnum.RECOVER_ACCOUNT,
-  //   receiver: email,
-  //   locals: {
-  //     username: existingUser.username,
-  //     recoverLink,
-  //   },
-  // });
+  await sendMail({
+    template: emaiEnum.RECOVER_ACCOUNT,
+    receiver: email,
+    locals: {
+      username: existingUser.username,
+      recoverLink,
+    },
+  });
 
   return res.status(StatusCodes.OK).send({
     message: "Send email success",
@@ -141,15 +143,14 @@ export async function sendReactivateAccount(
     configs.JWT_SECRET
   );
   const reactivateLink = `${configs.CLIENT_URL}/auth/reactivate?token=${token}`;
-  console.log(reactivateLink);
-  // await sendMail({
-  //   template: emaiEnum.REACTIVATE_ACCOUNT,
-  //   receiver: req.body.email,
-  //   locals: {
-  //     username: user.username,
-  //     reactivateLink,
-  //   },
-  // });
+  await sendMail({
+    template: emaiEnum.REACTIVATE_ACCOUNT,
+    receiver: req.body.email,
+    locals: {
+      username: user.username,
+      reactivateLink,
+    },
+  });
   return res.status(StatusCodes.OK).send({
     message: "Send email success",
   });
@@ -173,11 +174,11 @@ export async function signIn(
   const { email, password } = req.body;
   const user = await getUserByEmail(email, {
     password: true,
-    suspended: true,
-    disabled: true,
+    status: true,
   });
+
   if (!password) {
-    if (!user || !user.disabled)
+    if (!user || user.status != "Suspended")
       return res.status(StatusCodes.OK).json({
         message: !user
           ? "You can use this email to register for an account"
@@ -195,9 +196,9 @@ export async function signIn(
     )
       throw new BadRequestError("Invalid email or password");
 
-    if (user.suspended)
+    if (user.status == "Disabled")
       throw new BadRequestError(
-        "Your account has been locked please contact the administrator"
+        "Your account has been disabled please contact the administrator"
       );
 
     const sessionID = `sid:${genid(user.id)}`;
@@ -287,13 +288,13 @@ export async function signInWithGoogleCallBack(
       googleProvider = await insertGoogleLink(userInfo.id, user.id);
     }
 
-    if (googleProvider.user.suspended)
+    if (googleProvider.user.status == "Disabled")
       throw new BadRequestError(
         "Your account has been locked please contact the administrator"
       );
 
-    if (googleProvider.user.disabled)
-      throw new BadRequestError("Your account has been disactivate");
+    if (googleProvider.user.status == "Suspended")
+      throw new BadRequestError("Your account has been suspended");
 
     const sessionID = `sid:${genid(googleProvider.user.id)}`;
     const cookieOpt = {

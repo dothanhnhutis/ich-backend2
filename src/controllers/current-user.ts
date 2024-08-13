@@ -48,14 +48,14 @@ export async function resendEmail(req: Request, res: Response) {
   );
   const verificationLink = `${configs.CLIENT_URL}/auth/confirm-email?token=${token}`;
 
-  //   await sendMail({
-  //     template: emaiEnum.VERIFY_EMAIL,
-  //     receiver: user.email,
-  //     locals: {
-  //       username: user.username,
-  //       verificationLink,
-  //     },
-  //   });
+  await sendMail({
+    template: emaiEnum.VERIFY_EMAIL,
+    receiver: user.email,
+    locals: {
+      username: user.username,
+      verificationLink,
+    },
+  });
 
   return res.status(StatusCodes.OK).json({
     message:
@@ -136,7 +136,7 @@ export async function changeAvatar(
 export async function disactivate(req: Request, res: Response) {
   const { id } = req.user!;
   await editUserById(id, {
-    disabled: true,
+    status: "Suspended",
   });
   if (req.sessionID) await deteleSession(req.sessionID);
   res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({
@@ -157,16 +157,13 @@ export async function changeEmail(req: Request, res: Response) {
   const { email } = req.body;
   const { id } = req.user!;
 
-  const user = await getUserById(id);
-  if (!user) throw new NotFoundError();
-
-  if (email == user.email)
+  if (email == req.user!.email)
     throw new BadRequestError(
       "The new password must not be the same as the old password"
     );
 
   const checkNewEmail = await getUserByEmail(email);
-  if (!checkNewEmail) throw new BadRequestError("Email already exists");
+  if (checkNewEmail) throw new BadRequestError("Email already exists");
 
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters = randomBytes.toString("hex");
@@ -192,7 +189,7 @@ export async function changeEmail(req: Request, res: Response) {
     template: emaiEnum.VERIFY_EMAIL,
     receiver: email,
     locals: {
-      username: user.username,
+      username: req.user!.username,
       verificationLink: verificationLink,
     },
   });

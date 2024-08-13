@@ -1,9 +1,10 @@
 import configs from "@/configs";
 import { BadRequestError } from "@/error-handler";
-import { CreateUserReq, Role } from "@/schemas/user";
+import { CreateUserReq, Role, UserStatus } from "@/schemas/user";
 import prisma from "@/utils/db";
 import { hashData } from "@/utils/helper";
 import { signJWT, verifyJWT } from "@/utils/jwt";
+import { emaiEnum, sendMail } from "@/utils/nodemailer";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 
@@ -21,6 +22,7 @@ export const userSelectDefault: Prisma.UserSelect = {
   id: true,
   email: true,
   role: true,
+  hasPassword: true,
   username: true,
   phone: true,
   picture: true,
@@ -110,8 +112,7 @@ type QueryUserWhereType = {
   username?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
-  disabled?: boolean | undefined;
-  suspended?: boolean | undefined;
+  status?: "Active" | "Suspended" | "Disabled";
 };
 
 type QueryUserOrderByType = {
@@ -147,9 +148,9 @@ export async function queueUser(data?: QueryUserType) {
     take,
     skip,
   };
+  const aa: Role[] = ["Admin"];
   if (data?.where) {
-    const { id, email, role, username, emailVerified, disabled, suspended } =
-      data.where;
+    const { id, email, role, username, emailVerified, status } = data.where;
     args.where = {
       username: {
         contains: username,
@@ -165,8 +166,7 @@ export async function queueUser(data?: QueryUserType) {
         notIn: ["Admin"],
       },
       emailVerified: emailVerified,
-      disabled: disabled,
-      suspended: suspended,
+      status: status,
     };
   }
 
@@ -190,24 +190,22 @@ export async function queueUser(data?: QueryUserType) {
 }
 // Create
 export async function insertUserWithPassword(
-  data: CreateUserReq["body"],
+  input: CreateUserReq["body"],
   select?: Prisma.UserSelect
 ) {
+  const { password, ...props } = input;
+
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters: string = randomBytes.toString("hex");
   const date: Date = new Date(Date.now() + 24 * 60 * 60000);
-  const hash = hashData(data.password);
+  const hash = hashData(password);
 
   const user = await prisma.user.create({
     data: {
-      role: data.role || "Customer",
-      email: data.email,
+      ...props,
       password: hash,
-      username: data.username,
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
-      disabled: data.disabled,
-      suspended: data.suspended,
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,
@@ -223,14 +221,14 @@ export async function insertUserWithPassword(
   );
   const verificationLink = `${configs.CLIENT_URL}/auth/confirm-email?token=${token}`;
 
-  // await sendMail({
-  //   template: emaiEnum.VERIFY_EMAIL,
-  //   receiver: email,
-  //   locals: {
-  //     username,
-  //     verificationLink,
-  //   },
-  // });
+  await sendMail({
+    template: emaiEnum.VERIFY_EMAIL,
+    receiver: props.email,
+    locals: {
+      username: props.username,
+      verificationLink,
+    },
+  });
   return user;
 }
 
@@ -259,14 +257,14 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
       configs.JWT_SECRET
     );
     const verificationLink = `${configs.CLIENT_URL}/auth/confirm-email?token=${token}`;
-    // await sendMail({
-    //   template: emaiEnum.VERIFY_EMAIL,
-    //   receiver: data.email,
-    //   locals: {
-    //     username: data.username,
-    //     verificationLink,
-    //   },
-    // });
+    await sendMail({
+      template: emaiEnum.VERIFY_EMAIL,
+      receiver: data.email,
+      locals: {
+        username: data.username,
+        verificationLink,
+      },
+    });
   }
 
   return await prisma.user.create({
@@ -282,7 +280,7 @@ type UpdateUserByIdData = {
   emailVerified?: boolean;
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
-  disabled?: boolean;
+  status?: UserStatus;
   reActiveExpires?: Date | null;
   reActiveToken?: string | null;
   picture?: string | null;
@@ -294,18 +292,22 @@ type UpdateUserByIdData = {
 
 export async function editUserById(
   id: string,
-  data: UpdateUserByIdData,
+  input: UpdateUserByIdData,
   select?: Prisma.UserSelect
 ) {
-  if (data.password) {
-    data.password = hashData(data.password);
+  let data: Prisma.UserUpdateInput = {
+    ...input,
+  };
+  if (input.password) {
+    data.password = hashData(input.password);
+    data.hasPassword = true;
   }
 
   return await prisma.user.update({
     where: {
       id,
     },
-    data: data,
+    data,
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,
       ...select,
