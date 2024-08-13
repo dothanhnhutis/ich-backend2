@@ -6,8 +6,7 @@ const linkSelectDefault: Prisma.LinkProviderSelect = {
   user: {
     select: {
       id: true,
-      suspended: true,
-      disabled: true,
+      status: true,
     },
   },
 };
