@@ -9,7 +9,7 @@ const roleRegex =
 const trueFalseRegex = /^(0|1|true|false)$/;
 const userOrderByRegex =
   /^((email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)$/;
-
+const statusRegex = /^(Active|Suspended|Disabled)$/;
 export const creatUserSchema = z.object({
   body: signupSchema.shape.body
     .extend({
@@ -82,42 +82,21 @@ export const searchUserSchema = z.object({
               : undefined;
           }
         }),
-      disabled: z
+      status: z
         .string()
         .or(z.array(z.string()))
-        .transform((disabled) => {
-          if (Array.isArray(disabled)) {
-            const hasdisabled = disabled
-              .filter((val) => trueFalseRegex.test(val))
+        .transform((status) => {
+          if (Array.isArray(status)) {
+            const hasdisabled = status
+              .filter((val) => statusRegex.test(val))
               .filter((val, index, arr) => arr.indexOf(val) === index)
               .reverse()[0];
-            return hasdisabled
-              ? hasdisabled == "1" || hasdisabled == "true"
-              : undefined;
+            return hasdisabled;
           } else {
-            return trueFalseRegex.test(disabled)
-              ? disabled == "1" || disabled == "true"
-              : undefined;
+            return statusRegex.test(status) ? status : undefined;
           }
         }),
-      suspended: z
-        .string()
-        .or(z.array(z.string()))
-        .transform((suspended) => {
-          if (Array.isArray(suspended)) {
-            const hasSuspended = suspended
-              .filter((val) => trueFalseRegex.test(val))
-              .filter((val, index, arr) => arr.indexOf(val) === index)
-              .reverse()[0];
-            return hasSuspended
-              ? hasSuspended == "1" || hasSuspended == "true"
-              : undefined;
-          } else {
-            return trueFalseRegex.test(suspended)
-              ? suspended == "1" || suspended == "true"
-              : undefined;
-          }
-        }),
+
       order_by: z
         .string()
         .or(z.array(z.string()))

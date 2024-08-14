@@ -65,6 +65,12 @@ export const resetPasswordSchema = z.object({
   }),
   body: z
     .object({
+      session: z
+        .string({
+          required_error: "Session field is required",
+          invalid_type_error: "Session field must be string",
+        })
+        .min(1, "Session can not empty"),
       password: z
         .string({
           required_error: "Password field is required",

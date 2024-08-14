@@ -28,6 +28,7 @@ export async function searchUser(
       status: true,
     },
   });
+
   return res.status(StatusCodes.OK).json({
     users,
     metadata,

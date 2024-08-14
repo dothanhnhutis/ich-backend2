@@ -1,6 +1,5 @@
 import configs from "@/configs";
-import { BadRequestError } from "@/error-handler";
-import { CreateUserReq, Role, UserStatus } from "@/schemas/user";
+import { CreateUserReq, Role, User, UserStatus } from "@/schemas/user";
 import prisma from "@/utils/db";
 import { hashData } from "@/utils/helper";
 import { signJWT, verifyJWT } from "@/utils/jwt";
@@ -62,16 +61,21 @@ export async function getUserById(id: string, select?: Prisma.UserSelect) {
 
 export async function getUserByToken(
   type: "emailVerification" | "recoverAccount" | "reActivate",
-  token: string,
+  session: string,
   select?: Prisma.UserSelect
 ) {
-  const data = verifyJWT<{ session: string }>(token, configs.JWT_SECRET);
-  if (!data) return null;
+  // const data = verifyJWT<{
+  //   type: "emailVerification" | "recoverAccount" | "reActivate";
+  //   session: string;
+  // }>(token, configs.JWT_SECRET);
+
+  // if (!data) return null;
+
   switch (type) {
     case "emailVerification":
       return await prisma.user.findUnique({
         where: {
-          emailVerificationToken: data.session,
+          emailVerificationToken: session,
           emailVerificationExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({
@@ -82,7 +86,7 @@ export async function getUserByToken(
     case "recoverAccount":
       return await prisma.user.findUnique({
         where: {
-          passwordResetToken: data.session,
+          passwordResetToken: session,
           passwordResetExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({
@@ -93,7 +97,7 @@ export async function getUserByToken(
     case "reActivate":
       return await prisma.user.findUnique({
         where: {
-          reActiveToken: data.session,
+          reActiveToken: session,
           reActiveExpires: { gte: new Date() },
         },
         select: Prisma.validator<Prisma.UserSelect>()({
@@ -112,7 +116,7 @@ type QueryUserWhereType = {
   username?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
-  status?: "Active" | "Suspended" | "Disabled";
+  status?: string | undefined;
 };
 
 type QueryUserOrderByType = {
@@ -148,7 +152,6 @@ export async function queueUser(data?: QueryUserType) {
     take,
     skip,
   };
-  const aa: Role[] = ["Admin"];
   if (data?.where) {
     const { id, email, role, username, emailVerified, status } = data.where;
     args.where = {
@@ -166,7 +169,7 @@ export async function queueUser(data?: QueryUserType) {
         notIn: ["Admin"],
       },
       emailVerified: emailVerified,
-      status: status,
+      status: status as User["status"],
     };
   }
 
@@ -206,6 +209,7 @@ export async function insertUserWithPassword(
       password: hash,
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
+      hasPassword: true,
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,

@@ -25,13 +25,14 @@ import { getGoogleProviderById, insertGoogleLink } from "@/services/link";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
 import { deteleSession, setDataInMilisecond } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
+import { omit } from "lodash";
 
 export async function reActivateAccount(
-  req: Request<{ token: string }>,
+  req: Request<{ session: string }>,
   res: Response
 ) {
-  const { token } = req.params;
-  const user = await getUserByToken("reActivate", token);
+  const { session } = req.params;
+  const user = await getUserByToken("reActivate", session);
   if (!user) throw new NotFoundError();
   await editUserById(user.id, {
     status: "Active",
@@ -42,6 +43,21 @@ export async function reActivateAccount(
   return res.status(StatusCodes.OK).send({
     message: "reactivateAccount",
   });
+}
+
+export async function getSession(
+  req: Request<{}, {}, {}, { token?: string | string[] | undefined }>,
+  res: Response
+) {
+  const { token } = req.query;
+  if (!token || typeof token != "string") throw new NotFoundError();
+  const data = verifyJWT<{
+    type: "emailVerification" | "recoverAccount" | "reActivate";
+    session: string;
+    iat: number;
+  }>(token, configs.JWT_SECRET);
+  if (!data) throw new NotFoundError();
+  return res.status(StatusCodes.OK).json(omit(data, ["iat"]));
 }
 
 export async function recoverAccount(
@@ -72,6 +88,7 @@ export async function recoverAccount(
   }
   const token = signJWT(
     {
+      type: "recoverAccount",
       session: randomCharacters,
       iat: Math.floor(date.getTime() / 1000),
     },
@@ -93,13 +110,11 @@ export async function recoverAccount(
 }
 
 export async function resetPassword(
-  req: Request<ResetPasswordReq["params"], {}, ResetPasswordReq["body"]>,
+  req: Request<{}, {}, ResetPasswordReq["body"]>,
   res: Response
 ) {
-  const { token } = req.params;
-  const { password } = req.body;
-
-  const existingUser = await getUserByToken("recoverAccount", token);
+  const { session, password } = req.body;
+  const existingUser = await getUserByToken("recoverAccount", session);
   if (!existingUser) throw new BadRequestError("Reset token has expired");
   await editUserById(existingUser.id, {
     password,
@@ -137,6 +152,7 @@ export async function sendReactivateAccount(
   }
   const token = signJWT(
     {
+      type: "reActivate",
       session: randomCharacters,
       iat: Math.floor(date.getTime() / 1000),
     },
@@ -359,11 +375,11 @@ export async function signUp(
 }
 
 export async function verifyEmail(
-  req: Request<{ token: string }>,
+  req: Request<{ session: string }>,
   res: Response
 ) {
-  const { token } = req.params;
-  const user = await getUserByToken("emailVerification", token);
+  const { session } = req.params;
+  const user = await getUserByToken("emailVerification", session);
   if (!user) throw new NotFoundError();
 
   await editUserById(user.id, {

@@ -41,6 +41,7 @@ export async function resendEmail(req: Request, res: Response) {
 
   const token = signJWT(
     {
+      type: "emailVerification",
       session: randomCharacters,
       iat: Math.floor(date.getTime() / 1000),
     },
@@ -178,6 +179,7 @@ export async function changeEmail(req: Request, res: Response) {
 
   const token = signJWT(
     {
+      type: "emailVerification",
       session: randomCharacters,
       iat: Math.floor(date.getTime() / 1000),
     },
