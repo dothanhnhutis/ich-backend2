@@ -53,7 +53,7 @@ export async function resendEmail(req: Request, res: Response) {
     template: emaiEnum.VERIFY_EMAIL,
     receiver: user.email,
     locals: {
-      username: user.username,
+      username: user.firstName + " " + user.lastName,
       verificationLink,
     },
   });
@@ -191,7 +191,7 @@ export async function changeEmail(req: Request, res: Response) {
     template: emaiEnum.VERIFY_EMAIL,
     receiver: email,
     locals: {
-      username: req.user!.username,
+      username: req.user!.firstName + " " + req.user!.lastName,
       verificationLink: verificationLink,
     },
   });

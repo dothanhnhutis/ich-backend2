@@ -293,7 +293,8 @@ export type User = {
   emailVerified: boolean;
   emailVerificationExpires?: Date | null;
   emailVerificationToken?: string | null;
-  username: string;
+  firstName: string;
+  lastName: string;
   picture: string | null;
   hasPassword: boolean;
   passwordResetToken?: string | null;
