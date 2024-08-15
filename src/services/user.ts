@@ -22,7 +22,8 @@ export const userSelectDefault: Prisma.UserSelect = {
   email: true,
   role: true,
   hasPassword: true,
-  username: true,
+  firstName: true,
+  lastName: true,
   phone: true,
   picture: true,
   address: true,
@@ -113,7 +114,8 @@ export async function getUserByToken(
 type QueryUserWhereType = {
   id?: string[] | undefined;
   email?: string[] | undefined;
-  username?: string | undefined;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
   status?: string | undefined;
@@ -153,11 +155,12 @@ export async function queueUser(data?: QueryUserType) {
     skip,
   };
   if (data?.where) {
-    const { id, email, role, username, emailVerified, status } = data.where;
+    const { id, email, role, firstName, lastName, emailVerified, status } =
+      data.where;
     args.where = {
-      username: {
-        contains: username,
-      },
+      // username: {
+      //   contains: username,
+      // },
       id: {
         in: id,
       },
@@ -229,7 +232,7 @@ export async function insertUserWithPassword(
     template: emaiEnum.VERIFY_EMAIL,
     receiver: props.email,
     locals: {
-      username: props.username,
+      username: props.firstName + " " + props.lastName,
       verificationLink,
     },
   });
@@ -244,7 +247,8 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
   const data: Prisma.UserCreateInput = {
     email: googleData.email,
     emailVerified: googleData.verified_email,
-    username: googleData.name,
+    firstName: googleData.name,
+    lastName: "",
     picture: googleData.picture,
     emailVerificationToken: !googleData.verified_email
       ? randomCharacters
@@ -265,7 +269,7 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
       template: emaiEnum.VERIFY_EMAIL,
       receiver: data.email,
       locals: {
-        username: data.username,
+        username: data.firstName + " " + data.lastName,
         verificationLink,
       },
     });

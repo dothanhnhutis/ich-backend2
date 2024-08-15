@@ -24,12 +24,18 @@ export const signinSchema = z.object({
 export const signupSchema = z.object({
   body: z
     .object({
-      username: z
+      firstName: z
         .string({
-          required_error: "Username field is required",
-          invalid_type_error: "Username field must be string",
+          required_error: "firstName field is required",
+          invalid_type_error: "firstName field must be string",
         })
-        .min(1, "Username can't be empty"),
+        .min(1, "firstName can't be empty"),
+      lastName: z
+        .string({
+          required_error: "lastName field is required",
+          invalid_type_error: "lastName field must be string",
+        })
+        .min(1, "lastName can't be empty"),
       email: z
         .string({
           required_error: "Email field is required",

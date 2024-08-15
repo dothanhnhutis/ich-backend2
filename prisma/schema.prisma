@@ -39,7 +39,8 @@ model User {
   emailVerified            Boolean        @default(false)
   emailVerificationExpires DateTime? //24h
   emailVerificationToken   String?        @unique
-  username                 String
+  firstName                String
+  lastName                 String
   picture                  String?
   hasPassword              Boolean        @default(false)
   password                 String?
