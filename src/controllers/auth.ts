@@ -126,6 +126,8 @@ export async function resetPassword(
   if (!existingUser) throw new BadRequestError("Reset token has expired");
   await editUserById(existingUser.id, {
     password,
+    passwordResetExpires: new Date(),
+    passwordResetToken: null,
   });
 
   return res.status(StatusCodes.OK).send({
@@ -269,10 +271,10 @@ export async function signInWithGoogle(
 }
 
 export async function signInWithGoogleCallBack(
-  req: Request<{}, {}, {}, { code?: string; error?: string; state: string }>,
+  req: Request<{}, {}, {}, { code?: string; error?: string }>,
   res: Response
 ) {
-  const { code, error, state } = req.query;
+  const { code, error } = req.query;
 
   if (error) res.redirect(ERROR_REDIRECT);
 
@@ -296,7 +298,7 @@ export async function signInWithGoogleCallBack(
             httpOnly: true,
             secure: configs.NODE_ENV == "production",
           })
-          .redirect(`${configs.CLIENT_URL}/auth/signin`);
+          .redirect(`${configs.CLIENT_URL}/login`);
       }
       const user = await insertUserWithGoogle(userInfo);
       googleProvider = await insertGoogleLink(userInfo.id, user.id);

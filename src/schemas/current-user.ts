@@ -7,14 +7,14 @@ export const changePasswordSchema = z.object({
       oldPassword: z.string(),
       newPassword: z
         .string({
-          required_error: "Password field is required",
-          invalid_type_error: "Password field must be string",
+          required_error: "Password is required",
+          invalid_type_error: "Password must be string",
         })
-        .min(8, "Password field is too short")
-        .max(40, "Password field can not be longer than 40 characters")
+        .min(8, "Password is too short")
+        .max(40, "Password can not be longer than 40 characters")
         .regex(
           /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]*$/,
-          "Password field must include: letters, numbers and special characters"
+          "Password must include: letters, numbers and special characters"
         ),
       confirmNewPassword: z.string(),
     })
@@ -34,14 +34,14 @@ export const createPasswordSchema = z.object({
     .object({
       newPassword: z
         .string({
-          required_error: "Password field is required",
-          invalid_type_error: "Password field must be string",
+          required_error: "Password is required",
+          invalid_type_error: "Password must be string",
         })
-        .min(8, "Password field is too short")
-        .max(40, "Password field can not be longer than 40 characters")
+        .min(8, "Password is too short")
+        .max(40, "Password can not be longer than 40 characters")
         .regex(
           /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]*$/,
-          "Password field must include: letters, numbers and special characters"
+          "Password must include: letters, numbers and special characters"
         ),
       confirmNewPassword: z.string(),
     })
@@ -59,19 +59,25 @@ export const changeAvatarSchema = z.object({
 export const editProfileSchema = z.object({
   body: z
     .object({
-      username: z
+      firstName: z
         .string({
-          required_error: "username field is required",
-          invalid_type_error: "username field must be string",
+          required_error: "First name is required",
+          invalid_type_error: "First name must be string",
         })
-        .min(1, "username can't be empty"),
+        .min(1, "First name can't be empty"),
+      lastName: z
+        .string({
+          required_error: "Last name is required",
+          invalid_type_error: "Last name must be string",
+        })
+        .min(1, "Last name can't be empty"),
       phone: z.string({
-        required_error: "phone field is required",
-        invalid_type_error: "phone field must be string",
+        required_error: "phone is required",
+        invalid_type_error: "phone must be string",
       }),
       address: z.string({
-        required_error: "address field is required",
-        invalid_type_error: "address field must be string",
+        required_error: "address is required",
+        invalid_type_error: "address must be string",
       }),
     })
     .partial()

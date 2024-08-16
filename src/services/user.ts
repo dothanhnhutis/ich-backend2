@@ -241,8 +241,8 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
   const data: Prisma.UserCreateInput = {
     email: googleData.email,
     emailVerified: googleData.verified_email,
-    firstName: googleData.name,
-    lastName: "",
+    firstName: googleData.given_name,
+    lastName: googleData.family_name,
     picture: googleData.picture,
     emailVerificationToken: !googleData.verified_email
       ? randomCharacters
@@ -287,7 +287,8 @@ type UpdateUserByIdData = {
   reActiveExpires?: Date | null;
   reActiveToken?: string | null;
   picture?: string | null;
-  username?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string | null;
   address?: string | null;
   email?: string;
