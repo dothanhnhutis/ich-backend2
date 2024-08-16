@@ -208,7 +208,7 @@ export async function signIn(
     throw new BadRequestError("Your account is currently closed");
   if (user.status == "Disabled")
     throw new BadRequestError(
-      "Your account has been disabled please contact the administrator"
+      "Your account has been disabled. Please contact the administrator"
     );
 
   const sessionID = `sid:${genid(user.id)}`;
@@ -382,7 +382,6 @@ export async function verifyEmail(
     type: "emailVerification" | "recoverAccount" | "reActivate";
     session: string;
   }>(token, configs.JWT_SECRET);
-
   if (!data) throw new NotFoundError();
 
   const user = await getUserByToken(data.type, data.session);

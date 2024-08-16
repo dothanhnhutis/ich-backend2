@@ -214,6 +214,7 @@ export async function insertUserWithPassword(
   });
   const token = signJWT(
     {
+      type: "emailVerification",
       session: randomCharacters,
       iat: Math.floor(date.getTime() / 1000),
     },
@@ -252,6 +253,7 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
   if (data.emailVerificationToken) {
     const token = signJWT(
       {
+        type: "emailVerification",
         session: randomCharacters,
         iat: Math.floor(date.getTime() / 1000),
       },
