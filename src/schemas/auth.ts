@@ -15,8 +15,7 @@ export const signinSchema = z.object({
           invalid_type_error: "password field must be string",
         })
         .min(8, "invalid email or password")
-        .max(40, "invalid email or password")
-        .optional(),
+        .max(40, "invalid email or password"),
     })
     .strict(),
 });
@@ -66,9 +65,6 @@ export const recoverAccountSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  params: z.object({
-    token: z.string(),
-  }),
   body: z
     .object({
       session: z

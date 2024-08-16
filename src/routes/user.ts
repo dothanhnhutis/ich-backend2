@@ -92,7 +92,7 @@ function userRouter(): Router {
   // User
   router.patch(
     "/users/disactivate",
-    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    authMiddleware(["disabled", "suspended"]),
     disactivate
   );
   // User

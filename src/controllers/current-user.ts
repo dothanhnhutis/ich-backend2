@@ -47,7 +47,7 @@ export async function resendEmail(req: Request, res: Response) {
     },
     configs.JWT_SECRET
   );
-  const verificationLink = `${configs.CLIENT_URL}/auth/confirm-email?token=${token}`;
+  const verificationLink = `${configs.CLIENT_URL}/confirm-email?token=${token}`;
 
   await sendMail({
     template: emaiEnum.VERIFY_EMAIL,

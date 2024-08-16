@@ -28,11 +28,19 @@ import { UAParser } from "ua-parser-js";
 import { omit } from "lodash";
 
 export async function reActivateAccount(
-  req: Request<{ session: string }>,
+  req: Request<{ token: string }>,
   res: Response
 ) {
-  const { session } = req.params;
-  const user = await getUserByToken("reActivate", session);
+  const { token } = req.params;
+
+  const data = verifyJWT<{
+    type: "emailVerification" | "recoverAccount" | "reActivate";
+    session: string;
+  }>(token, configs.JWT_SECRET);
+
+  if (!data) throw new NotFoundError();
+
+  const user = await getUserByToken(data.type, data.session);
   if (!user) throw new NotFoundError();
   await editUserById(user.id, {
     status: "Active",
@@ -94,7 +102,7 @@ export async function recoverAccount(
     },
     configs.JWT_SECRET
   );
-  const recoverLink = `${configs.CLIENT_URL}/auth/reset-password?token=${token}`;
+  const recoverLink = `${configs.CLIENT_URL}/reset-password?token=${token}`;
   await sendMail({
     template: emaiEnum.RECOVER_ACCOUNT,
     receiver: email,
@@ -158,7 +166,7 @@ export async function sendReactivateAccount(
     },
     configs.JWT_SECRET
   );
-  const reactivateLink = `${configs.CLIENT_URL}/auth/reactivate?token=${token}`;
+  const reactivateLink = `${configs.CLIENT_URL}/reactivate?token=${token}`;
   await sendMail({
     template: emaiEnum.REACTIVATE_ACCOUNT,
     receiver: req.body.email,
@@ -193,64 +201,54 @@ export async function signIn(
     status: true,
   });
 
-  if (!password) {
-    if (!user || user.status != "Suspended")
-      return res.status(StatusCodes.OK).json({
-        message: !user
-          ? "You can use this email to register for an account"
-          : "Your account is active",
-      });
+  if (!user || !user.password || !(await compareData(user.password, password)))
+    throw new BadRequestError("Invalid email or password");
 
-    return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ message: "Your account is currently closed" });
-  } else {
-    if (
-      !user ||
-      !user.password ||
-      !(await compareData(user.password, password))
-    )
-      throw new BadRequestError("Invalid email or password");
-
-    if (user.status == "Disabled")
-      throw new BadRequestError(
-        "Your account has been disabled please contact the administrator"
-      );
-
-    const sessionID = `sid:${genid(user.id)}`;
-    const cookieOpt = {
-      path: "/",
-      httpOnly: true,
-      secure: false,
-      expires: new Date(Date.now() + SESSION_MAX_AGE),
-    };
-
-    console.log(req.ip);
-    console.log(req.headers["user-agent"]);
-    console.log(UAParser(req.headers["user-agent"]));
-
-    await setDataInMilisecond(
-      sessionID,
-      JSON.stringify({
-        user: {
-          id: user.id,
-        },
-        cookie: cookieOpt,
-        ip: req.ip || "",
-        userAgent: req.headers["user-agent"] || "",
-      }),
-      Math.abs(cookieOpt.expires.getTime() - Date.now())
+  if (user.status == "Suspended")
+    throw new BadRequestError("Your account is currently closed");
+  if (user.status == "Disabled")
+    throw new BadRequestError(
+      "Your account has been disabled please contact the administrator"
     );
 
-    return res
-      .status(StatusCodes.OK)
-      .cookie(
-        configs.SESSION_KEY_NAME,
-        encrypt(sessionID, configs.SESSION_SECRET),
-        cookieOpt
-      )
-      .json({ message: "Sign in success" });
-  }
+  const sessionID = `sid:${genid(user.id)}`;
+  const cookieOpt = {
+    path: "/",
+    httpOnly: true,
+    secure: false,
+    expires: new Date(Date.now() + SESSION_MAX_AGE),
+  };
+
+  console.log(req.ip);
+  console.log(req.headers["user-agent"]);
+  console.log(UAParser(req.headers["user-agent"]));
+
+  await setDataInMilisecond(
+    sessionID,
+    JSON.stringify({
+      user: {
+        id: user.id,
+      },
+      cookie: cookieOpt,
+      ip: req.ip || "",
+      userAgent: req.headers["user-agent"] || "",
+    }),
+    Math.abs(cookieOpt.expires.getTime() - Date.now())
+  );
+
+  return res
+    .status(StatusCodes.OK)
+    .cookie(
+      configs.SESSION_KEY_NAME,
+      encrypt(sessionID, configs.SESSION_SECRET),
+      cookieOpt
+    )
+    .json({
+      message: "Sign in success",
+      data: {
+        user,
+      },
+    });
 }
 
 export async function signInWithGoogle(
@@ -375,11 +373,19 @@ export async function signUp(
 }
 
 export async function verifyEmail(
-  req: Request<{ session: string }>,
+  req: Request<{ token: string }>,
   res: Response
 ) {
-  const { session } = req.params;
-  const user = await getUserByToken("emailVerification", session);
+  const { token } = req.params;
+
+  const data = verifyJWT<{
+    type: "emailVerification" | "recoverAccount" | "reActivate";
+    session: string;
+  }>(token, configs.JWT_SECRET);
+
+  if (!data) throw new NotFoundError();
+
+  const user = await getUserByToken(data.type, data.session);
   if (!user) throw new NotFoundError();
 
   await editUserById(user.id, {

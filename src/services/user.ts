@@ -65,13 +65,6 @@ export async function getUserByToken(
   session: string,
   select?: Prisma.UserSelect
 ) {
-  // const data = verifyJWT<{
-  //   type: "emailVerification" | "recoverAccount" | "reActivate";
-  //   session: string;
-  // }>(token, configs.JWT_SECRET);
-
-  // if (!data) return null;
-
   switch (type) {
     case "emailVerification":
       return await prisma.user.findUnique({
@@ -226,7 +219,7 @@ export async function insertUserWithPassword(
     },
     configs.JWT_SECRET
   );
-  const verificationLink = `${configs.CLIENT_URL}/auth/confirm-email?token=${token}`;
+  const verificationLink = `${configs.CLIENT_URL}/confirm-email?token=${token}`;
 
   await sendMail({
     template: emaiEnum.VERIFY_EMAIL,

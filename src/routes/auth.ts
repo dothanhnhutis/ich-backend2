@@ -32,7 +32,7 @@ function authRouter(): Router {
   router.delete("/auth/signout", signOut);
 
   router.post("/auth/signup", validateResource(signupSchema), signUp);
-  router.get("/auth/confirm-email/:session", verifyEmail);
+  router.get("/auth/confirm-email/:token", verifyEmail);
 
   router.get("/auth", getSession);
 
@@ -53,7 +53,7 @@ function authRouter(): Router {
     validateResource(sendReActivateAccountSchema),
     sendReactivateAccount
   );
-  router.get("/auth/reactivate/:session", reActivateAccount);
+  router.get("/auth/reactivate/:token", reActivateAccount);
 
   return router;
 }
