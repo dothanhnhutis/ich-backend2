@@ -111,16 +111,16 @@ type QueryUserWhereType = {
   lastName?: string | undefined;
   role?: Role[] | undefined;
   emailVerified?: boolean | undefined;
-  status?: string | undefined;
+  status?: User["status"][] | undefined;
 };
 
 type QueryUserOrderByType = {
   email?: "asc" | "desc";
-  username?: "asc" | "desc";
+  firstName?: "asc" | "desc";
+  lastName?: "asc" | "desc";
   role?: "asc" | "desc";
   emailVerified?: "asc" | "desc";
-  disabled?: "asc" | "desc";
-  suspended?: "asc" | "desc";
+  status?: "asc" | "desc";
   createdAt?: "asc" | "desc";
   updatedAt?: "asc" | "desc";
 };
@@ -151,9 +151,12 @@ export async function queueUser(data?: QueryUserType) {
     const { id, email, role, firstName, lastName, emailVerified, status } =
       data.where;
     args.where = {
-      // username: {
-      //   contains: username,
-      // },
+      firstName: {
+        contains: firstName,
+      },
+      lastName: {
+        contains: lastName,
+      },
       id: {
         in: id,
       },
@@ -165,7 +168,9 @@ export async function queueUser(data?: QueryUserType) {
         notIn: ["Admin"],
       },
       emailVerified: emailVerified,
-      status: status as User["status"],
+      status: {
+        in: status,
+      },
     };
   }
 

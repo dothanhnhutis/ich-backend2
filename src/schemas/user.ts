@@ -2,6 +2,7 @@ import { z } from "zod";
 import { signupSchema } from "./auth";
 
 const roles = ["Manager", "Saler", "Bloger", "Customer"] as const;
+const status = ["Active", "Suspended", "Disabled"] as const;
 const emailRegex =
   /^((([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))(\,))*?(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const roleRegex =
@@ -14,7 +15,7 @@ export const creatUserSchema = z.object({
   body: signupSchema.shape.body
     .extend({
       role: z.enum(roles).optional(),
-      status: z.enum(["Active", "Suspended", "Disabled"]).optional(),
+      status: z.enum(status).optional(),
     })
     .strict(),
 });
@@ -177,19 +178,17 @@ export const searchUserSchema = z.object({
             .email("Invalid email in array")
         )
         .min(1, "Emails can't empty"),
-      username: z.string({
+      firstName: z.string({
         invalid_type_error: "username must be string",
+      }),
+      lastName: z.string({
+        invalid_type_error: "lastName must be string",
       }),
       role: z.array(z.enum(roles)).min(1, "Roles can't empty"),
       emailVerified: z.boolean({
         invalid_type_error: "EmailVerified must be boolean",
       }),
-      disabled: z.boolean({
-        invalid_type_error: "disabled must be boolean",
-      }),
-      suspended: z.boolean({
-        invalid_type_error: "Suspended must be boolean",
-      }),
+      status: z.array(z.enum(status)).min(1, "Status can't empty"),
       order_by: z
         .array(
           z
@@ -197,8 +196,11 @@ export const searchUserSchema = z.object({
               email: z.enum(["asc", "desc"], {
                 message: "orderBy email must be enum 'asc'|'desc'",
               }),
-              username: z.enum(["asc", "desc"], {
-                message: "orderBy username must be enum 'asc'|'desc'",
+              firstName: z.enum(["asc", "desc"], {
+                message: "orderBy firstName must be enum 'asc'|'desc'",
+              }),
+              lastName: z.enum(["asc", "desc"], {
+                message: "orderBy lastName must be enum 'asc'|'desc'",
               }),
               role: z.enum(["asc", "desc"], {
                 message: "orderBy role must be enum 'asc'|'desc'",
@@ -206,11 +208,8 @@ export const searchUserSchema = z.object({
               emailVerified: z.enum(["asc", "desc"], {
                 message: "orderBy emailVerified must be enum 'asc'|'desc'",
               }),
-              disabled: z.enum(["asc", "desc"], {
-                message: "orderBy disabled must be enum 'asc'|'desc'",
-              }),
-              suspended: z.enum(["asc", "desc"], {
-                message: "orderBy suspended must be enum 'asc'|'desc'",
+              status: z.enum(["asc", "desc"], {
+                message: "orderBy status must be enum 'asc'|'desc'",
               }),
               createdAt: z.enum(["asc", "desc"], {
                 message: "orderBy createdAt must be enum 'asc'|'desc'",
@@ -228,7 +227,7 @@ export const searchUserSchema = z.object({
               },
               {
                 message:
-                  "Each object must have exactly one key, either 'email'|'role'|'emailVerified'|'disabled'|'suspended'|'createdAt'|'updatedAt'",
+                  "Each object must have exactly one key, either 'firstName'|'lastName'|'email'|'role'|'emailVerified'|'status'|'createdAt'|'updatedAt'",
               }
             )
         )
@@ -253,23 +252,9 @@ export const editUserSchema = z.object({
   params: z.object({
     userId: z.string(),
   }),
-  body: z
-    .object({
-      username: z
-        .string({
-          required_error: "username field is required",
-          invalid_type_error: "username field must be string",
-        })
-        .min(1, "username can't be empty"),
-      role: z.enum(roles),
-      disabled: z.boolean({
-        required_error: "disabled field is required",
-        invalid_type_error: "disabled field must be boolean",
-      }),
-      suspended: z.boolean({
-        required_error: "suspended field is required",
-        invalid_type_error: "suspended field must be boolean",
-      }),
+  body: creatUserSchema.shape.body
+    .omit({ email: true, password: true })
+    .extend({
       phone: z.string({
         required_error: "phone field is required",
         invalid_type_error: "phone field must be string",
