@@ -15,7 +15,8 @@ export async function searchUser(
   req: Request<{}, {}, SearchUserReq["body"], SearchUserReq["query"]>,
   res: Response
 ) {
-  const { page, limit, order_by, ...where } = req.body || {};
+  const { page, limit, order_by, ...where } = req.body || req.query || {};
+  console.log(where);
   const { users, metadata } = await queueUser({
     where,
     page,

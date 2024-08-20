@@ -9,8 +9,10 @@ const roleRegex =
   /^((Manager|Saler|Bloger|Customer)(\,))*?(Manager|Saler|Bloger|Customer)$/;
 const trueFalseRegex = /^(0|1|true|false)$/;
 const userOrderByRegex =
-  /^((email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)\,)*?(email|username|role|emailVerified|disabled|suspended|createdAt|updatedAt)\.(asc|desc)$/;
-const statusRegex = /^(Active|Suspended|Disabled)$/;
+  /^((email|firstName|lastName|role|emailVerified|status|createdAt|updatedAt)\.(asc|desc)\,)*?(email|firstName|lastName|role|emailVerified|status|createdAt|updatedAt)\.(asc|desc)$/;
+const statusRegex =
+  /^((Active|Suspended|Disabled)(\,))*?(Active|Suspended|Disabled)$/;
+
 export const creatUserSchema = z.object({
   body: signupSchema.shape.body
     .extend({
@@ -43,7 +45,11 @@ export const searchUserSchema = z.object({
             return emailRegex.test(email) ? email.split(",") : undefined;
           }
         }),
-      username: z
+      firstName: z
+        .string()
+        .or(z.array(z.string()))
+        .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
+      lastName: z
         .string()
         .or(z.array(z.string()))
         .transform((val) => (Array.isArray(val) ? val.reverse()[0] : val)),
@@ -88,13 +94,17 @@ export const searchUserSchema = z.object({
         .or(z.array(z.string()))
         .transform((status) => {
           if (Array.isArray(status)) {
-            const hasdisabled = status
+            return status
               .filter((val) => statusRegex.test(val))
-              .filter((val, index, arr) => arr.indexOf(val) === index)
-              .reverse()[0];
-            return hasdisabled;
+              .join(",")
+              .split(",")
+              .filter(
+                (val, index, arr) => arr.indexOf(val) === index
+              ) as User["status"][];
           } else {
-            return statusRegex.test(status) ? status : undefined;
+            return statusRegex.test(status)
+              ? (status.split(",") as User["status"][])
+              : undefined;
           }
         }),
 
