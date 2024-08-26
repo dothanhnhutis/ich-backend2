@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { z } from "zod";
 import bcryptjs from "bcryptjs";
+import otpauth from "otpauth";
 
 export const hashData = (data: string) => {
   const salt = bcryptjs.genSaltSync(10);
@@ -36,6 +37,7 @@ export function encrypt(text: string, secret: string) {
   let encrypted = cipher.update(text, "utf8", "hex") + cipher.final("hex");
   return iv.toString("hex") + "." + encrypted;
 }
+
 export function decrypt(encrypted: string, secret: string) {
   const secretValidate = z
     .string()
@@ -67,4 +69,50 @@ export function decrypt(encrypted: string, secret: string) {
 export function genid(userId: string) {
   const randomId = crypto.randomBytes(10).toString("hex");
   return `${userId}:${randomId}`;
+}
+
+export function generate2FA({
+  issuer = "ACME",
+  label = "I.C.H APP 2FA",
+}: {
+  issuer?: string;
+  label?: string;
+}) {
+  const secret = new otpauth.Secret({ size: 20 });
+  const totp = new otpauth.TOTP({
+    issuer,
+    label,
+    algorithm: "SHA1",
+    digits: 6,
+    period: 30,
+    secret: secret,
+  });
+  return {
+    ascii: secret.latin1,
+    hex: secret.hex,
+    base32: secret.base32,
+    oauth_url: totp.toString(),
+  };
+}
+
+export function validate2Fa({
+  issuer = "ACME",
+  label = "I.C.H APP 2FA",
+  secret,
+  token,
+}: {
+  issuer?: string;
+  label?: string;
+  secret: string;
+  token: string;
+}) {
+  const totp = new otpauth.TOTP({
+    issuer,
+    label,
+    algorithm: "SHA1",
+    digits: 6,
+    period: 30,
+    secret,
+  });
+  return totp.validate({ token });
 }

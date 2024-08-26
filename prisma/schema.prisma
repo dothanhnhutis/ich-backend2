@@ -8,15 +8,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model LinkProvider {
-  id         String @id @default(uuid())
+model OauthProvider {
+  id         String   @id @default(uuid())
   providerId String
   provider   String
   userId     String
-  user       User   @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([provider, providerId])
   @@index([userId, provider, providerId])
+}
+
+model TwoFA {
+  id              String   @id @default(uuid())
+  secretKey       String
+  lastTwoFATime   DateTime @updatedAt
+  backupCodes     String[]
+  backupCodesUsed String[] @default([])
+  userId          String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, backupCodes, backupCodesUsed])
 }
 
 enum Role {
@@ -34,35 +50,37 @@ enum Status {
 }
 
 model User {
-  id                       String         @id @default(uuid())
-  email                    String         @unique
-  emailVerified            Boolean        @default(false)
+  id                       String          @id @default(uuid())
+  email                    String          @unique
+  emailVerified            Boolean         @default(false)
   emailVerificationExpires DateTime? //24h
-  emailVerificationToken   String?        @unique
+  emailVerificationToken   String?         @unique
   firstName                String
   lastName                 String
   picture                  String?
-  hasPassword              Boolean        @default(false)
+  hasPassword              Boolean         @default(false)
   password                 String?
-  passwordResetToken       String?        @unique
+  passwordResetToken       String?         @unique
   passwordResetExpires     DateTime? //4h
-  role                     Role           @default(Customer)
-  status                   Status         @default(Active)
-  reActiveToken            String?        @unique
+  twoFAEnabled             Boolean         @default(false)
+  role                     Role            @default(Customer)
+  status                   Status          @default(Active)
+  reActiveToken            String?         @unique
   reActiveExpires          DateTime? //4h
   phone                    String?
   address                  String?
-  createdAt                DateTime       @default(now())
-  updatedAt                DateTime       @updatedAt
-  linkProviders            LinkProvider[]
-  blogs                    Blog[]
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  oauthProviders           OauthProvider[]
+  posts                    Post[]
   products                 Product[]
+  twoFAs                   TwoFA[]
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
-// Blog Model
-model Blog {
+// Post Model
+model Post {
   id          String   @id @default(uuid())
   title       String
   image       String
@@ -87,7 +105,7 @@ model Tag {
   id        String   @id @default(uuid())
   name      String
   slug      String   @unique
-  blog      Blog[]
+  posts     Post[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -282,21 +282,22 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
 
 // Update
 type UpdateUserByIdData = {
+  twoFAEnabled?: boolean | undefined;
   password?: string | null;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
-  emailVerified?: boolean;
+  emailVerified?: boolean | undefined;
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
-  status?: UserStatus;
+  status?: UserStatus | undefined;
   reActiveExpires?: Date | null;
   reActiveToken?: string | null;
   picture?: string | null;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | undefined;
+  lastName?: string | undefined;
   phone?: string | null;
   address?: string | null;
-  email?: string;
+  email?: string | undefined;
 };
 
 export async function editUserById(
@@ -310,6 +311,23 @@ export async function editUserById(
   if (input.password) {
     data.password = hashData(input.password);
     data.hasPassword = true;
+  }
+  if (typeof input.twoFAEnabled != "undefined") {
+    if (input.twoFAEnabled) {
+      await prisma.twoFA.create({
+        data: {
+          userId: id,
+          backupCodes: [],
+          secretKey: "asdasd",
+        },
+      });
+    } else {
+      await prisma.twoFA.delete({
+        where: {
+          userId: id,
+        },
+      });
+    }
   }
 
   return await prisma.user.update({
