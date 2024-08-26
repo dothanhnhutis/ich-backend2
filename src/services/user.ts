@@ -4,18 +4,10 @@ import prisma from "@/utils/db";
 import { hashData } from "@/utils/helper";
 import { signJWT, verifyJWT } from "@/utils/jwt";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
+import { GoogleUserInfo } from "@/utils/oauth";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 
-export type GoogleUserInfo = {
-  id: string;
-  email: string;
-  verified_email: boolean;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string;
-};
 // Read
 export const userSelectDefault: Prisma.UserSelect = {
   id: true,
@@ -312,23 +304,6 @@ export async function editUserById(
     data.password = hashData(input.password);
     data.hasPassword = true;
   }
-  if (typeof input.twoFAEnabled != "undefined") {
-    if (input.twoFAEnabled) {
-      await prisma.twoFA.create({
-        data: {
-          userId: id,
-          backupCodes: [],
-          secretKey: "asdasd",
-        },
-      });
-    } else {
-      await prisma.twoFA.delete({
-        where: {
-          userId: id,
-        },
-      });
-    }
-  }
 
   return await prisma.user.update({
     where: {
@@ -339,5 +314,37 @@ export async function editUserById(
       ...userSelectDefault,
       ...select,
     }),
+  });
+}
+
+export async function enable2FA(
+  id: string,
+  input: {
+    secretKey: string;
+    backupCodes: string[];
+  }
+) {
+  await prisma.twoFA.create({
+    data: {
+      userId: id,
+      backupCodes: input.backupCodes,
+      secretKey: input.secretKey,
+    },
+  });
+
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      twoFAEnabled: true,
+    },
+  });
+}
+export async function disable2FA(id: string) {
+  await prisma.twoFA.delete({
+    where: {
+      userId: id,
+    },
   });
 }

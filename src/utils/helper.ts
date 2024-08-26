@@ -71,17 +71,11 @@ export function genid(userId: string) {
   return `${userId}:${randomId}`;
 }
 
-export function generate2FA({
-  issuer = "ACME",
-  label = "I.C.H APP 2FA",
-}: {
-  issuer?: string;
-  label?: string;
-}) {
+export function genTOTP() {
   const secret = new otpauth.Secret({ size: 20 });
   const totp = new otpauth.TOTP({
-    issuer,
-    label,
+    issuer: "ACME",
+    label: "I.C.H APP 2FA",
     algorithm: "SHA1",
     digits: 6,
     period: 30,
@@ -95,24 +89,28 @@ export function generate2FA({
   };
 }
 
-export function validate2Fa({
-  issuer = "ACME",
-  label = "I.C.H APP 2FA",
+export function validateTOTP({
   secret,
   token,
 }: {
-  issuer?: string;
-  label?: string;
   secret: string;
   token: string;
 }) {
   const totp = new otpauth.TOTP({
-    issuer,
-    label,
+    issuer: "ACME",
+    label: "I.C.H APP 2FA",
     algorithm: "SHA1",
     digits: 6,
     period: 30,
     secret,
   });
   return totp.validate({ token });
+}
+
+export function genOTP(props?: { digits?: number } | undefined) {
+  if (props && props.digits && props.digits <= 0)
+    throw new Error("Digits must be a positive integer");
+  return Array.from({ length: props?.digits || 6 })
+    .map(() => Math.floor(Math.random() * 10))
+    .join("");
 }

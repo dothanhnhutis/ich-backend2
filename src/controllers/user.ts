@@ -24,7 +24,7 @@ export async function searchUser(
     order_by,
     select: {
       password: true,
-      linkProviders: true,
+      oauthProviders: true,
       emailVerified: true,
       status: true,
     },

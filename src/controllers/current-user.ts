@@ -3,7 +3,13 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "@/error-handler";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
-import { getUserByEmail, getUserById, editUserById } from "@/services/user";
+import {
+  getUserByEmail,
+  getUserById,
+  editUserById,
+  enable2FA,
+  disable2FA,
+} from "@/services/user";
 import configs from "@/configs";
 import { signJWT } from "@/utils/jwt";
 import {
@@ -12,9 +18,11 @@ import {
   editProfileReq,
   CreatePasswordReq,
 } from "@/schemas/current-user";
-import { compareData } from "@/utils/helper";
+import { compareData, genOTP, genTOTP } from "@/utils/helper";
 import { uploadImageCloudinary } from "@/utils/image";
 import { deteleSession } from "@/redis/cache";
+import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
+import { insertGoogleLink } from "@/services/link";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -199,4 +207,77 @@ export async function changeEmail(req: Request, res: Response) {
   return res.status(StatusCodes.OK).json({
     message: "Updated and resending e-mail...",
   });
+}
+
+export async function enable2FAAccount(req: Request, res: Response) {
+  const { id, twoFAEnabled } = req.user!;
+  if (twoFAEnabled)
+    throw new BadRequestError(
+      "Two-Factor Authentication (2FA) has been enabled"
+    );
+
+  const backupCodes = Array.from({ length: 10 }).map(() => genOTP());
+  const totp = genTOTP();
+  await enable2FA(id, { secretKey: totp.base32, backupCodes });
+
+  res.status(StatusCodes.OK).json({
+    message: "Two-Factor Authentication (2FA) is enable",
+    data: {
+      backupCodes,
+      totp,
+    },
+  });
+}
+
+export async function disable2FAAccount(req: Request, res: Response) {
+  const { id, twoFAEnabled } = req.user!;
+  if (!twoFAEnabled)
+    throw new BadRequestError(
+      "Two-Factor Authentication (2FA) has been disable"
+    );
+  await disable2FA(id);
+
+  return res
+    .status(StatusCodes.OK)
+    .json({ message: "Two-Factor Authentication (2FA) is disable" });
+}
+
+export async function connectOauthProvider(
+  req: Request<{ provider: "google" }>,
+  res: Response
+) {
+  const { id } = req.user!;
+  const { provider } = req.params;
+  const url = genGoogleAuthUrl({
+    redirect_uri: `${configs.SERVER_URL}/api/v1/users/link/${provider}/callback`,
+    state: id,
+  });
+  return res.redirect(url);
+}
+
+export async function connectOauthProviderCallback(
+  req: Request<
+    { provider: "google" },
+    {},
+    {},
+    {
+      code?: string | string[] | undefined;
+      error?: string | string[] | undefined;
+      state?: string | string[] | undefined;
+    }
+  >,
+  res: Response
+) {
+  const { provider } = req.params;
+  const { code, error, state } = req.query;
+
+  if (error || !code) throw new BadRequestError("fail connect");
+
+  const userInfo = await getGoogleUserProfile(code);
+  await insertGoogleLink(userInfo.id, state);
+  return res.status(StatusCodes.OK).json({ message: "oke" });
+}
+
+export async function disconnectOauthProvider(req: Request, res: Response) {
+  return res.status(StatusCodes.OK).json({ message: "" });
 }

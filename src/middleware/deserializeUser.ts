@@ -38,6 +38,7 @@ const deserializeUser: Middleware = async (req, res, next) => {
       password: true,
       emailVerified: true,
       status: true,
+      twoFAEnabled: true,
     });
 
     if (user) {

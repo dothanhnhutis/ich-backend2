@@ -277,11 +277,23 @@ export const editUserSchema = z.object({
     .strip()
     .partial(),
 });
+
+export const connectOauthProviderSchema = z.object({
+  body: z.object({
+    provider: z.enum(["google"]),
+    providerId: z.string({
+      invalid_type_error: "ProviderId must be string",
+      required_error: "ProviderId must be required",
+    }),
+  }),
+});
+
 export type Role = "Admin" | "Manager" | "Saler" | "Bloger" | "Customer";
 export type UserStatus = "Active" | "Suspended" | "Disabled";
 export type CreateUserReq = z.infer<typeof creatUserSchema>;
 export type SearchUserReq = z.infer<typeof searchUserSchema>;
 export type EditUserReq = z.infer<typeof editUserSchema>;
+
 export type User = {
   id: string;
   email: string;
@@ -294,6 +306,7 @@ export type User = {
   hasPassword: boolean;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
+  twoFAEnabled: boolean;
   role: Role;
   status: UserStatus;
   reActiveToken?: string | null;

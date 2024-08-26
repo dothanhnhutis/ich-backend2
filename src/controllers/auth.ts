@@ -7,7 +7,6 @@ import {
   insertUserWithPassword,
   getUserByEmail,
   getUserByToken,
-  GoogleUserInfo,
   editUserById,
 } from "@/services/user";
 import {
@@ -26,6 +25,7 @@ import { emaiEnum, sendMail } from "@/utils/nodemailer";
 import { deteleSession, setDataInMilisecond } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
 import { omit } from "lodash";
+import { getGoogleUserProfile } from "@/utils/oauth";
 
 export async function reActivateAccount(
   req: Request<{ token: string }>,
@@ -257,6 +257,7 @@ export async function signInWithGoogle(
   req: Request<{}, {}, {}, { redir?: string }>,
   res: Response
 ) {
+  console.log(req.user);
   const url = oAuth2Client.generateAuthUrl({
     access_type: "offline",
     scope: [
@@ -279,15 +280,7 @@ export async function signInWithGoogleCallBack(
   if (error) res.redirect(ERROR_REDIRECT);
 
   if (code) {
-    const { tokens } = await oAuth2Client.getToken(code);
-    oAuth2Client.setCredentials(tokens);
-
-    const oauth2 = google.oauth2({
-      auth: oAuth2Client,
-      version: "v2",
-    });
-
-    const userInfo = (await oauth2.userinfo.get()).data as GoogleUserInfo;
+    const userInfo = await getGoogleUserProfile(code);
     let googleProvider = await getGoogleProviderById(userInfo.id);
 
     if (!googleProvider) {
