@@ -74,7 +74,7 @@ model User {
   oauthProviders           OauthProvider[]
   posts                    Post[]
   products                 Product[]
-  twoFAs                   TwoFA[]
+  twoFA                    TwoFA?
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }

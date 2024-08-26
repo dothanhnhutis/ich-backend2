@@ -6,7 +6,6 @@ import cors from "cors";
 import compression from "compression";
 import http from "http";
 import { StatusCodes } from "http-status-codes";
-import crypto from "crypto";
 
 import configs from "@/configs";
 import { Customerror, IErrorResponse, NotFoundError } from "@/error-handler";
