@@ -80,7 +80,7 @@ export class Server {
       ) => {
         if (error instanceof Customerror) {
           if (error.statusCode == StatusCodes.UNAUTHORIZED) {
-            res.clearCookie("session");
+            // res.clearCookie("session");
           }
           return res.status(error.statusCode).json(error.serializeErrors());
         }

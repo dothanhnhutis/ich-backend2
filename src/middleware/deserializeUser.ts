@@ -2,7 +2,7 @@ import { CookieOptions, RequestHandler as Middleware } from "express";
 import { parse } from "cookie";
 import { decrypt } from "@/utils/helper";
 import configs from "@/configs";
-import { deteleSession, getData } from "@/redis/cache";
+import { deteleDataCache, getDataCache } from "@/redis/cache";
 import { User } from "@/schemas/user";
 import { getUserById } from "@/services/user";
 
@@ -32,20 +32,22 @@ const deserializeUser: Middleware = async (req, res, next) => {
       cookies[configs.SESSION_KEY_NAME],
       configs.SESSION_SECRET
     );
-    const cookieRedis = await getData(req.sessionID);
+    const cookieRedis = await getDataCache(req.sessionID);
+
     const cookieJson = JSON.parse(cookieRedis || "") as ISession;
+
     const user = await getUserById(cookieJson.user.id, {
       password: true,
       emailVerified: true,
       status: true,
-      twoFAEnabled: true,
+      mFAEnabled: true,
     });
 
     if (user) {
       req.user = user;
     } else {
       res.clearCookie(configs.SESSION_KEY_NAME);
-      await deteleSession(req.sessionID);
+      await deteleDataCache(req.sessionID);
     }
   } catch (error) {
     res.clearCookie(configs.SESSION_KEY_NAME);

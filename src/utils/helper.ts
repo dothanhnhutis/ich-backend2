@@ -70,8 +70,13 @@ export function genid(userId: string) {
   const randomId = crypto.randomBytes(10).toString("hex");
   return `${userId}:${randomId}`;
 }
-
-export function genTOTP() {
+export type TOTPType = {
+  ascii: string;
+  hex: string;
+  base32: string;
+  oauth_url: string;
+};
+export function genTOTP(): TOTPType {
   const secret = new otpauth.Secret({ size: 20 });
   const totp = new otpauth.TOTP({
     issuer: "ACME",

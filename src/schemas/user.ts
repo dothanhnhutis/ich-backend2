@@ -306,7 +306,7 @@ export type User = {
   hasPassword: boolean;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
-  twoFAEnabled: boolean;
+  mFAEnabled: boolean;
   role: Role;
   status: UserStatus;
   reActiveToken?: string | null;

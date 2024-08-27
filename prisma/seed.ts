@@ -2,8 +2,8 @@ import prisma from "../src/utils/db";
 import { hashData } from "../src/utils/helper";
 import { faker } from "@faker-js/faker";
 async function seed() {
-  await prisma.linkProvider.deleteMany();
-  await prisma.blog.deleteMany();
+  await prisma.oauthProvider.deleteMany();
+  await prisma.post.deleteMany();
   await prisma.tag.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
@@ -69,7 +69,7 @@ async function seed() {
     })),
   });
 
-  await prisma.blog.createMany({
+  await prisma.post.createMany({
     data: Array.from({ length: 30 }, (_, index) => ({
       contentText: "",
       contentHTML: "<p></p>",

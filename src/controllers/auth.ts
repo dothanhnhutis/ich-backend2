@@ -19,13 +19,14 @@ import {
 import { signJWT, verifyJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
-import { compareData, encrypt, genid } from "@/utils/helper";
+import { compareData, encrypt, genid, validateTOTP } from "@/utils/helper";
 import { getGoogleProviderById, insertGoogleLink } from "@/services/link";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
-import { deteleSession, setDataInMilisecond } from "@/redis/cache";
+import { deteleDataCache, setDataInMilisecondCache } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
 import { omit } from "lodash";
 import { getGoogleUserProfile } from "@/utils/oauth";
+import { updateBackupCodeUsedById } from "@/services/mfa";
 
 export async function reActivateAccount(
   req: Request<{ token: string }>,
@@ -197,10 +198,12 @@ export async function signIn(
   req: Request<{}, {}, SignInReq["body"]>,
   res: Response
 ) {
-  const { email, password } = req.body;
+  const { email, password, mfa_code } = req.body;
   const user = await getUserByEmail(email, {
     password: true,
     status: true,
+    mFAEnabled: true,
+    mFA: true,
   });
 
   if (!user || !user.password || !(await compareData(user.password, password)))
@@ -212,6 +215,27 @@ export async function signIn(
     throw new BadRequestError(
       "Your account has been disabled. Please contact the administrator"
     );
+  if (user.mFAEnabled) {
+    if (!mfa_code) throw new BadRequestError("Invalid MFA code");
+
+    const mFAValidate =
+      validateTOTP({
+        secret: user.mFA!.secretKey,
+        token: mfa_code,
+      }) == 0;
+    const isBackupCode = user.mFA!.backupCodes.includes(mfa_code);
+    const isBackupCodeUsed = user.mFA!.backupCodesUsed.includes(mfa_code);
+
+    if (!mFAValidate) {
+      if (isBackupCodeUsed)
+        throw new BadRequestError("MFA backup codes are used");
+      if (isBackupCode) {
+        updateBackupCodeUsedById(user.id, mfa_code);
+      } else {
+        throw new BadRequestError("Invalid MFA code");
+      }
+    }
+  }
 
   const sessionID = `sid:${genid(user.id)}`;
   const cookieOpt = {
@@ -225,7 +249,7 @@ export async function signIn(
   console.log(req.headers["user-agent"]);
   console.log(UAParser(req.headers["user-agent"]));
 
-  await setDataInMilisecond(
+  await setDataInMilisecondCache(
     sessionID,
     JSON.stringify({
       user: {
@@ -247,9 +271,6 @@ export async function signIn(
     )
     .json({
       message: "Sign in success",
-      data: {
-        user,
-      },
     });
 }
 
@@ -317,7 +338,7 @@ export async function signInWithGoogleCallBack(
     console.log(req.headers["user-agent"]);
     console.log(UAParser(req.headers["user-agent"]));
 
-    await setDataInMilisecond(
+    await setDataInMilisecondCache(
       sessionID,
       JSON.stringify({
         user: {
@@ -341,7 +362,7 @@ export async function signInWithGoogleCallBack(
 }
 
 export async function signOut(req: Request, res: Response) {
-  if (req.sessionID) await deteleSession(req.sessionID);
+  if (req.sessionID) await deteleDataCache(req.sessionID);
   res
     .status(StatusCodes.OK)
     .clearCookie(configs.SESSION_KEY_NAME)

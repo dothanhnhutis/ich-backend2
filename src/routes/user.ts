@@ -1,6 +1,6 @@
 import express, { type Router } from "express";
 import { authMiddleware } from "@/middleware/requiredAuth";
-import { rateLimitSendEmail } from "@/middleware/rateLimit";
+import { rateLimitSendEmail, rateLimitUserId } from "@/middleware/rateLimit";
 import validateResource from "@/middleware/validateResource";
 import {
   changeAvatar,
@@ -11,12 +11,16 @@ import {
   currentUser,
   resendEmail,
   createPassword,
+  initMFA,
+  disableMFAAccount,
+  enableMFAAccount,
 } from "@/controllers/current-user";
 import {
   changeAvatarSchema,
   changePasswordSchema,
   editProfileSchema,
   createPasswordSchema,
+  enableMFASchema,
 } from "@/schemas/current-user";
 import {
   createNewUser,
@@ -53,6 +57,13 @@ function userRouter(): Router {
     checkPermission(["Admin"]),
     validateResource(searchUserSchema),
     searchUser
+  );
+  // User
+  router.get(
+    "/users/mfa",
+    rateLimitUserId,
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    initMFA
   );
   // Admin
   router.get(
@@ -115,6 +126,19 @@ function userRouter(): Router {
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(editProfileSchema),
     editProfile
+  );
+
+  router.post(
+    "/users/mfa",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    validateResource(enableMFASchema),
+    enableMFAAccount
+  );
+
+  router.delete(
+    "/users/mfa",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    disableMFAAccount
   );
 
   // router.get("/users/recover/:token", getUserRecoverToken);

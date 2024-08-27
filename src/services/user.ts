@@ -317,14 +317,14 @@ export async function editUserById(
   });
 }
 
-export async function enable2FA(
+export async function enableMFA(
   id: string,
   input: {
     secretKey: string;
     backupCodes: string[];
   }
 ) {
-  await prisma.twoFA.create({
+  await prisma.mFA.create({
     data: {
       userId: id,
       backupCodes: input.backupCodes,
@@ -337,12 +337,20 @@ export async function enable2FA(
       id,
     },
     data: {
-      twoFAEnabled: true,
+      mFAEnabled: true,
     },
   });
 }
-export async function disable2FA(id: string) {
-  await prisma.twoFA.delete({
+export async function disableMFA(id: string) {
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      mFAEnabled: false,
+    },
+  });
+  await prisma.mFA.delete({
     where: {
       userId: id,
     },

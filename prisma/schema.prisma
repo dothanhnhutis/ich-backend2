@@ -21,7 +21,7 @@ model OauthProvider {
   @@index([userId, provider, providerId])
 }
 
-model TwoFA {
+model MFA {
   id              String   @id @default(uuid())
   secretKey       String
   lastTwoFATime   DateTime @updatedAt
@@ -30,7 +30,7 @@ model TwoFA {
   userId          String   @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            Account  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, backupCodes, backupCodesUsed])
 }
@@ -49,7 +49,7 @@ enum Status {
   Disabled
 }
 
-model User {
+model Account {
   id                       String          @id @default(uuid())
   email                    String          @unique
   emailVerified            Boolean         @default(false)
@@ -62,7 +62,7 @@ model User {
   password                 String?
   passwordResetToken       String?         @unique
   passwordResetExpires     DateTime? //4h
-  twoFAEnabled             Boolean         @default(false)
+  mFAEnabled               Boolean         @default(false)
   role                     Role            @default(Customer)
   status                   Status          @default(Active)
   reActiveToken            String?         @unique
@@ -74,9 +74,17 @@ model User {
   oauthProviders           OauthProvider[]
   posts                    Post[]
   products                 Product[]
-  twoFA                    TwoFA?
+  mFA                      MFA?
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
+}
+
+model Info {
+  id        String @id @default(uuid())
+  firstName String
+  lastName  String
+  phone     String @default("")
+  address   String @default("")
 }
 
 // Post Model

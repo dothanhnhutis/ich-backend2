@@ -42,3 +42,17 @@ export const rateLimitSendEmail = rateLimit({
     return res.status(options.statusCode).json({ message: options.message });
   },
 });
+
+export const rateLimitUserId = rateLimit({
+  windowMs: 60000,
+  limit: 1,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: function (req: Request) {
+    const currentUser = req.user!;
+    return currentUser.id;
+  },
+  handler: (req, res, next, options) => {
+    return res.status(options.statusCode).json({ message: options.message });
+  },
+});

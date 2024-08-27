@@ -7,8 +7,8 @@ import {
   getUserByEmail,
   getUserById,
   editUserById,
-  enable2FA,
-  disable2FA,
+  enableMFA,
+  disableMFA,
 } from "@/services/user";
 import configs from "@/configs";
 import { signJWT } from "@/utils/jwt";
@@ -17,12 +17,25 @@ import {
   ChangePasswordReq,
   editProfileReq,
   CreatePasswordReq,
+  EnableMFAReq,
 } from "@/schemas/current-user";
-import { compareData, genOTP, genTOTP } from "@/utils/helper";
+import {
+  compareData,
+  genOTP,
+  genTOTP,
+  TOTPType,
+  validateTOTP,
+} from "@/utils/helper";
 import { uploadImageCloudinary } from "@/utils/image";
-import { deteleSession } from "@/redis/cache";
+import {
+  deteleDataCache,
+  getDataCache,
+  setDataInMilisecondCache,
+  setDataInSecondCache,
+} from "@/redis/cache";
 import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
 import { insertGoogleLink } from "@/services/link";
+import qrcode from "qrcode";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -147,7 +160,7 @@ export async function disactivate(req: Request, res: Response) {
   await editUserById(id, {
     status: "Suspended",
   });
-  if (req.sessionID) await deteleSession(req.sessionID);
+  if (req.sessionID) await deteleDataCache(req.sessionID);
   res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({
     message: "Your account has been disabled. You can reactivate at any time!",
   });
@@ -209,75 +222,139 @@ export async function changeEmail(req: Request, res: Response) {
   });
 }
 
-export async function enable2FAAccount(req: Request, res: Response) {
-  const { id, twoFAEnabled } = req.user!;
-  if (twoFAEnabled)
+export async function initMFA(req: Request, res: Response) {
+  const { id, mFAEnabled } = req.user!;
+  if (mFAEnabled)
     throw new BadRequestError(
-      "Two-Factor Authentication (2FA) has been enabled"
+      "Multi-factor authentication (MFA) has been enabled"
     );
 
-  const backupCodes = Array.from({ length: 10 }).map(() => genOTP());
-  const totp = genTOTP();
-  await enable2FA(id, { secretKey: totp.base32, backupCodes });
+  let backupCodes: string[], totp: TOTPType;
+  const totpData = await getDataCache(`${id}:mfa`);
+  if (!totpData) {
+    backupCodes = Array.from({ length: 10 }).map(() => genOTP());
+    totp = genTOTP();
+    await setDataInSecondCache(
+      `${id}:mfa`,
+      JSON.stringify({
+        backupCodes,
+        totp,
+      }),
+      60 * 60 * 24
+    );
+  } else {
+    const mfaCookie = JSON.parse(totpData) as {
+      backupCodes: string[];
+      totp: TOTPType;
+    };
+    backupCodes = mfaCookie.backupCodes;
+    totp = mfaCookie.totp;
+  }
+
+  qrcode.toDataURL(totp.oauth_url, async (err, imageUrl) => {
+    if (err) {
+      deteleDataCache(`${id}:mfa`);
+      throw new BadRequestError("Failed to generate QR code.");
+    }
+
+    return res.status(StatusCodes.OK).json({
+      message: "Scan this QR code with your authenticator app.",
+      data: {
+        backupCodes,
+        totp,
+        qrCodeUrl: imageUrl,
+      },
+    });
+  });
+}
+
+export async function enableMFAAccount(
+  req: Request<{}, {}, EnableMFAReq["body"]>,
+  res: Response
+) {
+  const { id, mFAEnabled } = req.user!;
+  const { mfa_code1, mfa_code2 } = req.body!;
+
+  if (mFAEnabled)
+    throw new BadRequestError(
+      "Multi-factor authentication (MFA) has been enabled"
+    );
+  const totpInfo = await getDataCache(`${id}:mfa`);
+  if (!totpInfo)
+    throw new BadRequestError(
+      "Multi-factor authentication (MFA) has been enabled"
+    );
+
+  const { backupCodes, totp } = JSON.parse(totpInfo) as {
+    backupCodes: string[];
+    totp: TOTPType;
+  };
+
+  if (
+    validateTOTP({ secret: totp.base32, token: mfa_code1 }) == null ||
+    validateTOTP({ secret: totp.base32, token: mfa_code2 }) == null
+  )
+    throw new BadRequestError("Invalid MFA code");
+
+  await enableMFA(id, { secretKey: totp.base32, backupCodes });
 
   res.status(StatusCodes.OK).json({
-    message: "Two-Factor Authentication (2FA) is enable",
+    message: "Multi-factor authentication (MFA) is enable",
     data: {
       backupCodes,
-      totp,
     },
   });
 }
 
-export async function disable2FAAccount(req: Request, res: Response) {
-  const { id, twoFAEnabled } = req.user!;
-  if (!twoFAEnabled)
+export async function disableMFAAccount(req: Request, res: Response) {
+  const { id, mFAEnabled } = req.user!;
+  if (!mFAEnabled)
     throw new BadRequestError(
-      "Two-Factor Authentication (2FA) has been disable"
+      "Multi-factor authentication (MFA) has been disable"
     );
-  await disable2FA(id);
+  await disableMFA(id);
 
   return res
     .status(StatusCodes.OK)
-    .json({ message: "Two-Factor Authentication (2FA) is disable" });
+    .json({ message: "Multi-factor authentication (MFA) is disable" });
 }
 
-export async function connectOauthProvider(
-  req: Request<{ provider: "google" }>,
-  res: Response
-) {
-  const { id } = req.user!;
-  const { provider } = req.params;
-  const url = genGoogleAuthUrl({
-    redirect_uri: `${configs.SERVER_URL}/api/v1/users/link/${provider}/callback`,
-    state: id,
-  });
-  return res.redirect(url);
-}
+// export async function connectOauthProvider(
+//   req: Request<{ provider: "google" }>,
+//   res: Response
+// ) {
+//   const { id } = req.user!;
+//   const { provider } = req.params;
+//   const url = genGoogleAuthUrl({
+//     redirect_uri: `${configs.SERVER_URL}/api/v1/users/link/${provider}/callback`,
+//     state: id,
+//   });
+//   return res.redirect(url);
+// }
 
-export async function connectOauthProviderCallback(
-  req: Request<
-    { provider: "google" },
-    {},
-    {},
-    {
-      code?: string | string[] | undefined;
-      error?: string | string[] | undefined;
-      state?: string | string[] | undefined;
-    }
-  >,
-  res: Response
-) {
-  const { provider } = req.params;
-  const { code, error, state } = req.query;
+// export async function connectOauthProviderCallback(
+//   req: Request<
+//     { provider: "google" },
+//     {},
+//     {},
+//     {
+//       code?: string | string[] | undefined;
+//       error?: string | string[] | undefined;
+//       state?: string | string[] | undefined;
+//     }
+//   >,
+//   res: Response
+// ) {
+//   const { provider } = req.params;
+//   const { code, error, state } = req.query;
 
-  if (error || !code) throw new BadRequestError("fail connect");
+//   if (error || !code) throw new BadRequestError("fail connect");
 
-  const userInfo = await getGoogleUserProfile(code);
-  await insertGoogleLink(userInfo.id, state);
-  return res.status(StatusCodes.OK).json({ message: "oke" });
-}
+//   const userInfo = await getGoogleUserProfile(code);
+//   await insertGoogleLink(userInfo.id, state);
+//   return res.status(StatusCodes.OK).json({ message: "oke" });
+// }
 
-export async function disconnectOauthProvider(req: Request, res: Response) {
-  return res.status(StatusCodes.OK).json({ message: "" });
-}
+// export async function disconnectOauthProvider(req: Request, res: Response) {
+//   return res.status(StatusCodes.OK).json({ message: "" });
+// }

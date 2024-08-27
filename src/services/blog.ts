@@ -2,7 +2,7 @@ import prisma from "@/utils/db";
 import { uploadImageCloudinary } from "@/utils/image";
 import { Prisma } from "@prisma/client";
 
-export const blogSelectDefault: Prisma.BlogSelect = {
+export const blogSelectDefault: Prisma.PostSelect = {
   id: true,
   title: true,
   slug: true,
@@ -16,7 +16,8 @@ export const blogSelectDefault: Prisma.BlogSelect = {
     select: {
       id: true,
       email: true,
-      username: true,
+      firstName: true,
+      lastName: true,
       picture: true,
     },
   },
@@ -43,7 +44,7 @@ type CreateNewBlogType = {
 // Create
 export async function insertBlog(
   data: CreateNewBlogType,
-  select?: Prisma.BlogSelect
+  select?: Prisma.PostSelect
 ) {
   const { image, ...props } = data;
   let url;
@@ -53,12 +54,12 @@ export async function insertBlog(
   } else {
     url = image.data;
   }
-  return await prisma.blog.create({
+  return await prisma.post.create({
     data: {
       ...props,
       image: url,
     },
-    select: Prisma.validator<Prisma.BlogSelect>()({
+    select: Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
       ...select,
     }),
@@ -66,20 +67,20 @@ export async function insertBlog(
 }
 
 // Read
-export async function getBlogById(id: string, select?: Prisma.BlogSelect) {
-  return await prisma.blog.findUnique({
+export async function getBlogById(id: string, select?: Prisma.PostSelect) {
+  return await prisma.post.findUnique({
     where: { id },
-    select: Prisma.validator<Prisma.BlogSelect>()({
+    select: Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
       ...select,
     }),
   });
 }
 
-export async function getBlogBySlug(slug: string, select?: Prisma.BlogSelect) {
-  return await prisma.blog.findUnique({
+export async function getBlogBySlug(slug: string, select?: Prisma.PostSelect) {
+  return await prisma.post.findUnique({
     where: { slug },
-    select: Prisma.validator<Prisma.BlogSelect>()({
+    select: Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
       ...select,
     }),
@@ -111,7 +112,7 @@ type QueryBlogType = {
   limit?: number;
   page?: number;
   order_by?: QueryBlogOrderByType[];
-  select?: Prisma.BlogSelect;
+  select?: Prisma.PostSelect;
 };
 
 export async function queryBlog(data?: QueryBlogType) {
@@ -122,8 +123,8 @@ export async function queryBlog(data?: QueryBlogType) {
   if (data && data.where?.publishAt && data.where.publishAt.length != 2) {
     delete data.where.publishAt;
   }
-  let args: Prisma.BlogFindManyArgs = {
-    select: Prisma.validator<Prisma.BlogSelect>()({
+  let args: Prisma.PostFindManyArgs = {
+    select: Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
     }),
     take,
@@ -158,7 +159,7 @@ export async function queryBlog(data?: QueryBlogType) {
     };
   }
   if (data?.select) {
-    args.select = Prisma.validator<Prisma.BlogSelect>()({
+    args.select = Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
       ...data.select,
     });
@@ -178,12 +179,12 @@ export async function queryBlog(data?: QueryBlogType) {
           : d.author_username
           ? { author: { username: d.author_username } }
           : d
-      ) as Prisma.BlogOrderByWithRelationInput[];
+      ) as Prisma.PostOrderByWithRelationInput[];
   }
 
   const [blogs, total] = await prisma.$transaction([
-    prisma.blog.findMany(args),
-    prisma.blog.count({ where: args.where }),
+    prisma.post.findMany(args),
+    prisma.post.count({ where: args.where }),
   ]);
 
   return {
@@ -200,11 +201,11 @@ export async function queryBlog(data?: QueryBlogType) {
 export async function editBlogById(
   id: string,
   data: Partial<CreateNewBlogType>,
-  select?: Prisma.BlogSelect
+  select?: Prisma.PostSelect
 ) {
   const { image, ...props } = data;
 
-  const newData: Prisma.BlogUpdateInput = {
+  const newData: Prisma.PostUpdateInput = {
     ...props,
   };
   if (image) {
@@ -218,12 +219,12 @@ export async function editBlogById(
     }
   }
 
-  return await prisma.blog.update({
+  return await prisma.post.update({
     where: {
       id,
     },
     data: newData,
-    select: Prisma.validator<Prisma.BlogSelect>()({
+    select: Prisma.validator<Prisma.PostSelect>()({
       ...blogSelectDefault,
       ...select,
     }),

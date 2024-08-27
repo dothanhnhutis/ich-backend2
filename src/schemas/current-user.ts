@@ -84,7 +84,31 @@ export const editProfileSchema = z.object({
     .strip(),
 });
 
+export const enableMFASchema = z.object({
+  body: z
+    .object({
+      mfa_code1: z
+        .string({
+          required_error:
+            "Multi-factor authentication (MFA) code 1 is required",
+          invalid_type_error:
+            "Multi-factor authentication (MFA) code 1 must be string",
+        })
+        .length(6, "Invalid Multi-factor authentication (MFA) code 1"),
+      mfa_code2: z
+        .string({
+          required_error:
+            "Multi-factor authentication (MFA) code 2 is required",
+          invalid_type_error:
+            "Multi-factor authentication (MFA) code 2 must be string",
+        })
+        .length(6, "Invalid Multi-factor authentication (MFA) code 2"),
+    })
+    .strict(),
+});
+
 export type ChangePasswordReq = z.infer<typeof changePasswordSchema>;
 export type CreatePasswordReq = z.infer<typeof createPasswordSchema>;
 export type ChangeAvatarReq = z.infer<typeof changeAvatarSchema>;
 export type editProfileReq = z.infer<typeof editProfileSchema>;
+export type EnableMFAReq = z.infer<typeof enableMFASchema>;
