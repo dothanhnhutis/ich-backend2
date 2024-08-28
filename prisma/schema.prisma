@@ -8,33 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model OauthProvider {
-  id         String   @id @default(uuid())
-  providerId String
-  provider   String
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([provider, providerId])
-  @@index([userId, provider, providerId])
-}
-
-model MFA {
-  id              String   @id @default(uuid())
-  secretKey       String
-  lastTwoFATime   DateTime @updatedAt
-  backupCodes     String[]
-  backupCodesUsed String[] @default([])
-  userId          String   @unique
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, backupCodes, backupCodesUsed])
-}
-
 enum Role {
   Admin
   Manager
@@ -75,12 +48,39 @@ model User {
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
+model OauthProvider {
+  id         String   @id @default(uuid())
+  providerId String
+  provider   String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([provider, providerId])
+  @@index([userId, provider, providerId])
+}
+
+model MFA {
+  id              String   @id @default(uuid())
+  secretKey       String
+  lastTwoFATime   DateTime @updatedAt
+  backupCodes     String[]
+  backupCodesUsed String[] @default([])
+  userId          String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, backupCodes, backupCodesUsed])
+}
+
 model Profile {
   id         String   @id @default(uuid())
   firstName  String
   lastName   String
-  photo      String
-  coverPhoto String
+  photo      String?
+  coverPhoto String?
   phone      String   @default("")
   address    String   @default("")
   postalCode String   @default("")
