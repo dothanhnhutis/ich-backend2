@@ -13,12 +13,25 @@ export const userSelectDefault: Prisma.UserSelect = {
   id: true,
   email: true,
   role: true,
+  emailVerified: true,
+  status: true,
   hasPassword: true,
-  firstName: true,
-  lastName: true,
-  phone: true,
-  picture: true,
-  address: true,
+  mFAEnabled: true,
+  profile: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      picture: true,
+      phone: true,
+      address: true,
+      zipCode: true,
+      country: true,
+      province: true,
+      city: true,
+      apartment: true,
+    },
+  },
   createdAt: true,
   updatedAt: true,
 };
@@ -143,12 +156,12 @@ export async function queueUser(data?: QueryUserType) {
     const { id, email, role, firstName, lastName, emailVerified, status } =
       data.where;
     args.where = {
-      firstName: {
-        contains: firstName,
-      },
-      lastName: {
-        contains: lastName,
-      },
+      // firstName: {
+      //   contains: firstName,
+      // },
+      // lastName: {
+      //   contains: lastName,
+      // },
       id: {
         in: id,
       },
@@ -189,7 +202,7 @@ export async function insertUserWithPassword(
   input: CreateUserReq["body"],
   select?: Prisma.UserSelect
 ) {
-  const { password, ...props } = input;
+  const { password, firstName, lastName, ...props } = input;
 
   const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
   const randomCharacters: string = randomBytes.toString("hex");
@@ -203,12 +216,19 @@ export async function insertUserWithPassword(
       emailVerificationToken: randomCharacters,
       emailVerificationExpires: date,
       hasPassword: true,
+      profile: {
+        create: {
+          firstName,
+          lastName,
+        },
+      },
     },
     select: Prisma.validator<Prisma.UserSelect>()({
       ...userSelectDefault,
       ...select,
     }),
   });
+
   const token = signJWT(
     {
       type: "emailVerification",
@@ -223,7 +243,7 @@ export async function insertUserWithPassword(
     template: emaiEnum.VERIFY_EMAIL,
     receiver: props.email,
     locals: {
-      username: props.firstName + " " + props.lastName,
+      username: firstName + " " + lastName,
       verificationLink,
     },
   });
@@ -238,13 +258,17 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
   const data: Prisma.UserCreateInput = {
     email: googleData.email,
     emailVerified: googleData.verified_email,
-    firstName: googleData.given_name,
-    lastName: googleData.family_name,
-    picture: googleData.picture,
     emailVerificationToken: !googleData.verified_email
       ? randomCharacters
       : null,
     emailVerificationExpires: !googleData.verified_email ? date : null,
+    profile: {
+      create: {
+        firstName: googleData.given_name,
+        lastName: googleData.family_name,
+        picture: googleData.picture,
+      },
+    },
   };
 
   if (data.emailVerificationToken) {
@@ -261,7 +285,7 @@ export async function insertUserWithGoogle(googleData: GoogleUserInfo) {
       template: emaiEnum.VERIFY_EMAIL,
       receiver: data.email,
       locals: {
-        username: data.firstName + " " + data.lastName,
+        username: googleData.given_name + " " + googleData.family_name,
         verificationLink,
       },
     });

@@ -30,11 +30,8 @@ import { uploadImageCloudinary } from "@/utils/image";
 import {
   deteleDataCache,
   getDataCache,
-  setDataInMilisecondCache,
   setDataInSecondCache,
 } from "@/redis/cache";
-import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
-import { insertGoogleLink } from "@/services/link";
 import qrcode from "qrcode";
 
 export function currentUser(req: Request, res: Response) {
@@ -43,7 +40,9 @@ export function currentUser(req: Request, res: Response) {
 
 export async function resendEmail(req: Request, res: Response) {
   const { id } = req.user!;
-  const user = await getUserById(id);
+  const user = await getUserById(id, {
+    profile: true,
+  });
   if (!user) throw new NotFoundError();
   if (user.emailVerified) throw new NotFoundError();
 
@@ -74,7 +73,7 @@ export async function resendEmail(req: Request, res: Response) {
     template: emaiEnum.VERIFY_EMAIL,
     receiver: user.email,
     locals: {
-      username: user.firstName + " " + user.lastName,
+      username: user.profile?.lastName + " " + user.profile?.lastName,
       verificationLink,
     },
   });
@@ -177,7 +176,7 @@ export async function editProfile(
 
 export async function changeEmail(req: Request, res: Response) {
   const { email } = req.body;
-  const { id } = req.user!;
+  const { id, profile } = req.user!;
 
   if (email == req.user!.email)
     throw new BadRequestError(
@@ -212,7 +211,7 @@ export async function changeEmail(req: Request, res: Response) {
     template: emaiEnum.VERIFY_EMAIL,
     receiver: email,
     locals: {
-      username: req.user!.firstName + " " + req.user!.lastName,
+      username: profile?.firstName + " " + profile?.lastName,
       verificationLink: verificationLink,
     },
   });

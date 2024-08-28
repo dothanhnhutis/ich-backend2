@@ -1,6 +1,7 @@
 import prisma from "../src/utils/db";
 import { hashData } from "../src/utils/helper";
 import { faker } from "@faker-js/faker";
+
 async function seed() {
   await prisma.oauthProvider.deleteMany();
   await prisma.post.deleteMany();

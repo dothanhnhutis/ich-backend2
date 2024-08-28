@@ -30,7 +30,7 @@ model MFA {
   userId          String   @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  user            Account  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, backupCodes, backupCodesUsed])
 }
@@ -49,15 +49,12 @@ enum Status {
   Disabled
 }
 
-model Account {
+model User {
   id                       String          @id @default(uuid())
   email                    String          @unique
   emailVerified            Boolean         @default(false)
   emailVerificationExpires DateTime? //24h
   emailVerificationToken   String?         @unique
-  firstName                String
-  lastName                 String
-  picture                  String?
   hasPassword              Boolean         @default(false)
   password                 String?
   passwordResetToken       String?         @unique
@@ -67,24 +64,35 @@ model Account {
   status                   Status          @default(Active)
   reActiveToken            String?         @unique
   reActiveExpires          DateTime? //4h
-  phone                    String?
-  address                  String?
   createdAt                DateTime        @default(now())
   updatedAt                DateTime        @updatedAt
   oauthProviders           OauthProvider[]
   posts                    Post[]
   products                 Product[]
   mFA                      MFA?
+  profile                  Profile?
 
   @@index([email, emailVerificationToken, passwordResetToken, reActiveToken])
 }
 
-model Info {
-  id        String @id @default(uuid())
-  firstName String
-  lastName  String
-  phone     String @default("")
-  address   String @default("")
+model Profile {
+  id         String   @id @default(uuid())
+  firstName  String
+  lastName   String
+  photo      String
+  coverPhoto String
+  phone      String   @default("")
+  address    String   @default("")
+  postalCode String   @default("")
+  country    String   @default("")
+  region     String   @default("")
+  city       String   @default("")
+  bio        String   @default("")
+  urls       String[] @default([])
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // Post Model

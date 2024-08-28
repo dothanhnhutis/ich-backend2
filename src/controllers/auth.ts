@@ -20,7 +20,7 @@ import { signJWT, verifyJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
 import { compareData, encrypt, genid, validateTOTP } from "@/utils/helper";
-import { getGoogleProviderById, insertGoogleLink } from "@/services/link";
+import { getGoogleProviderById, insertGoogleLink } from "@/services/oauth";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
 import { deteleDataCache, setDataInMilisecondCache } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
@@ -76,6 +76,7 @@ export async function recoverAccount(
   const { email } = req.body;
   const existingUser = await getUserByEmail(email, {
     emailVerified: true,
+    profile: true,
   });
   if (!existingUser) throw new BadRequestError("Invalid email");
   if (!existingUser.emailVerified)
@@ -108,7 +109,8 @@ export async function recoverAccount(
     template: emaiEnum.RECOVER_ACCOUNT,
     receiver: email,
     locals: {
-      username: existingUser.firstName + "" + existingUser.lastName,
+      username:
+        existingUser.profile?.firstName + "" + existingUser.profile?.lastName,
       recoverLink,
     },
   });
@@ -174,7 +176,7 @@ export async function sendReactivateAccount(
     template: emaiEnum.REACTIVATE_ACCOUNT,
     receiver: req.body.email,
     locals: {
-      username: user.firstName + "" + user.lastName,
+      username: user.profile?.firstName + "" + user.profile?.lastName,
       reactivateLink,
     },
   });
@@ -209,14 +211,8 @@ export async function signIn(
   if (!user || !user.password || !(await compareData(user.password, password)))
     throw new BadRequestError("Invalid email or password");
 
-  if (user.status == "Suspended")
-    throw new BadRequestError("Your account is currently closed");
-  if (user.status == "Disabled")
-    throw new BadRequestError(
-      "Your account has been disabled. Please contact the administrator"
-    );
   if (user.mFAEnabled) {
-    if (!mfa_code) throw new BadRequestError("Invalid MFA code");
+    if (!mfa_code) throw new BadRequestError("MFA code is required");
 
     const mFAValidate =
       validateTOTP({
@@ -229,13 +225,19 @@ export async function signIn(
     if (!mFAValidate) {
       if (isBackupCodeUsed)
         throw new BadRequestError("MFA backup codes are used");
-      if (isBackupCode) {
-        updateBackupCodeUsedById(user.id, mfa_code);
-      } else {
-        throw new BadRequestError("Invalid MFA code");
-      }
+      if (!isBackupCode) throw new BadRequestError("Invalid MFA code");
+
+      updateBackupCodeUsedById(user.id, mfa_code);
     }
   }
+
+  if (user.status == "Suspended")
+    throw new BadRequestError("Your account is currently closed");
+
+  if (user.status == "Disabled")
+    throw new BadRequestError(
+      "Your account has been disabled. Please contact the administrator"
+    );
 
   const sessionID = `sid:${genid(user.id)}`;
   const cookieOpt = {
