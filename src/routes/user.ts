@@ -11,7 +11,7 @@ import {
   currentUser,
   resendEmail,
   createPassword,
-  initMFA,
+  setupMFA,
   disableMFAAccount,
   enableMFAAccount,
 } from "@/controllers/current-user";
@@ -127,7 +127,7 @@ function userRouter(): Router {
     // rateLimitUserId,
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(setupMFASchema),
-    initMFA
+    setupMFA
   );
   // User
   router.post(
@@ -137,7 +137,7 @@ function userRouter(): Router {
     enableMFAAccount
   );
   // User
-  router.delete(
+  router.post(
     "/users/mfa/disable",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     disableMFAAccount

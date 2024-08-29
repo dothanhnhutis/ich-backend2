@@ -18,8 +18,16 @@ export async function getDataCache(key: string): Promise<string | null> {
   return await redisClient.get(key);
 }
 
-export async function setDataCache(key: string, val: string): Promise<void> {
-  await redisClient.set(key, val);
+export async function setDataCache(
+  key: string,
+  val: string,
+  opt?: { keepTTL?: boolean }
+): Promise<void> {
+  if (opt?.keepTTL) {
+    await redisClient.set(key, val, "KEEPTTL");
+  } else {
+    await redisClient.set(key, val);
+  }
 }
 
 export async function setDataInMilisecondCache(

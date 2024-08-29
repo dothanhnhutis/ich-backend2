@@ -31,9 +31,11 @@ import { uploadImageCloudinary } from "@/utils/image";
 import {
   deteleDataCache,
   getDataCache,
+  setDataCache,
   setDataInSecondCache,
 } from "@/redis/cache";
 import qrcode from "qrcode";
+import { getMFAByUserId } from "@/services/mfa";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -222,7 +224,7 @@ export async function changeEmail(req: Request, res: Response) {
   });
 }
 
-export async function initMFA(
+export async function setupMFA(
   req: Request<{}, {}, SetupMFAReq["body"]>,
   res: Response
 ) {
@@ -235,24 +237,35 @@ export async function initMFA(
 
   let backupCodes: string[], totp: TOTPType;
   const totpData = await getDataCache(`${id}:mfa`);
+
   if (!totpData) {
     backupCodes = Array.from({ length: 10 }).map(() => genOTP());
     totp = genTOTP(deviceName);
+
     await setDataInSecondCache(
       `${id}:mfa`,
       JSON.stringify({
         backupCodes,
         totp,
       }),
-      60 * 60 * 24
+      60 * 60
     );
   } else {
     const mfaCookie = JSON.parse(totpData) as {
       backupCodes: string[];
       totp: TOTPType;
     };
+
     backupCodes = mfaCookie.backupCodes;
-    totp = mfaCookie.totp;
+    totp = genTOTP(deviceName, mfaCookie.totp.base32);
+    await setDataCache(
+      `${id}:mfa`,
+      JSON.stringify({
+        backupCodes,
+        totp,
+      }),
+      { keepTTL: true }
+    );
   }
 
   qrcode.toDataURL(totp.oauth_url, async (err, imageUrl) => {
@@ -277,7 +290,7 @@ export async function enableMFAAccount(
   res: Response
 ) {
   const { id, mFAEnabled } = req.user!;
-  const { mfa_code1, mfa_code2 } = req.body!;
+  const { mfa_code1, mfa_code2 } = req.body;
 
   if (mFAEnabled)
     throw new BadRequestError(
@@ -286,7 +299,7 @@ export async function enableMFAAccount(
   const totpInfo = await getDataCache(`${id}:mfa`);
   if (!totpInfo)
     throw new BadRequestError(
-      "Multi-factor authentication (MFA) has been enabled"
+      "The multi-factor authentication (MFA) code has expired"
     );
 
   const { backupCodes, totp } = JSON.parse(totpInfo) as {
@@ -312,10 +325,22 @@ export async function enableMFAAccount(
 
 export async function disableMFAAccount(req: Request, res: Response) {
   const { id, mFAEnabled } = req.user!;
+  const { mfa_code1, mfa_code2 } = req.body;
+
   if (!mFAEnabled)
     throw new BadRequestError(
       "Multi-factor authentication (MFA) has been disable"
     );
+  const totp = await getMFAByUserId(id);
+  if (!totp)
+    throw new BadRequestError(
+      "Multi-factor authentication (MFA) has been disable"
+    );
+  if (
+    validateTOTP({ secret: totp.secretKey, token: mfa_code1 }) == null ||
+    validateTOTP({ secret: totp.secretKey, token: mfa_code2 }) == null
+  )
+    throw new BadRequestError("Invalid MFA code");
   await disableMFA(id);
 
   return res

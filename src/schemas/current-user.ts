@@ -93,7 +93,7 @@ export const setupMFASchema = z.object({
           required_error: "deviceName is required",
         })
         .max(128, "deviceName maximin 128 characters.")
-        .regex(/^[\d\w+=,.@\-_][\d\w\s+=,.@\-_]{0,127}$/, "deviceName "),
+        .regex(/^[\d\w+=,.@\-_][\d\w\s+=,.@\-_]*$/, "deviceName "),
     })
     .strict(),
 });

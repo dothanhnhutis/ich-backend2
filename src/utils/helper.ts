@@ -76,10 +76,12 @@ export type TOTPType = {
   base32: string;
   oauth_url: string;
 };
-export function genTOTP(label: string): TOTPType {
-  const secret = new otpauth.Secret({ size: 20 });
+export function genTOTP(label: string, secretKey?: string): TOTPType {
+  const secret = secretKey
+    ? otpauth.Secret.fromBase32(secretKey)
+    : new otpauth.Secret({ size: 20 });
   const totp = new otpauth.TOTP({
-    issuer: "I.C.H APP",
+    issuer: "I.C.H Web Service",
     label: label,
     algorithm: "SHA1",
     digits: 6,
@@ -102,11 +104,6 @@ export function validateTOTP({
   token: string;
 }) {
   const totp = new otpauth.TOTP({
-    issuer: "ACME",
-    label: "I.C.H APP 2FA",
-    algorithm: "SHA1",
-    digits: 6,
-    period: 30,
     secret,
   });
   return totp.validate({ token });
