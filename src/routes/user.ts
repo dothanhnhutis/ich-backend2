@@ -124,7 +124,7 @@ function userRouter(): Router {
   // User
   router.post(
     "/users/mfa/setup",
-    rateLimitUserId,
+    // rateLimitUserId,
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(setupMFASchema),
     initMFA
