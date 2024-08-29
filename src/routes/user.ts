@@ -21,6 +21,7 @@ import {
   editProfileSchema,
   createPasswordSchema,
   enableMFASchema,
+  setupMFASchema,
 } from "@/schemas/current-user";
 import {
   createNewUser,
@@ -57,13 +58,6 @@ function userRouter(): Router {
     checkPermission(["Admin"]),
     validateResource(searchUserSchema),
     searchUser
-  );
-  // User
-  router.get(
-    "/users/mfa",
-    rateLimitUserId,
-    authMiddleware(["emailVerified", "disabled", "suspended"]),
-    initMFA
   );
   // Admin
   router.get(
@@ -127,16 +121,24 @@ function userRouter(): Router {
     validateResource(editProfileSchema),
     editProfile
   );
-
+  // User
   router.post(
-    "/users/mfa",
+    "/users/mfa/setup",
+    rateLimitUserId,
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    validateResource(setupMFASchema),
+    initMFA
+  );
+  // User
+  router.post(
+    "/users/mfa/enable",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(enableMFASchema),
     enableMFAAccount
   );
-
+  // User
   router.delete(
-    "/users/mfa",
+    "/users/mfa/disable",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     disableMFAAccount
   );

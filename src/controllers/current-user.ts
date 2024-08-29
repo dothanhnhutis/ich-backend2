@@ -18,6 +18,7 @@ import {
   editProfileReq,
   CreatePasswordReq,
   EnableMFAReq,
+  SetupMFAReq,
 } from "@/schemas/current-user";
 import {
   compareData,
@@ -221,8 +222,12 @@ export async function changeEmail(req: Request, res: Response) {
   });
 }
 
-export async function initMFA(req: Request, res: Response) {
+export async function initMFA(
+  req: Request<{}, {}, SetupMFAReq["body"]>,
+  res: Response
+) {
   const { id, mFAEnabled } = req.user!;
+  const { deviceName } = req.body;
   if (mFAEnabled)
     throw new BadRequestError(
       "Multi-factor authentication (MFA) has been enabled"
@@ -232,7 +237,7 @@ export async function initMFA(req: Request, res: Response) {
   const totpData = await getDataCache(`${id}:mfa`);
   if (!totpData) {
     backupCodes = Array.from({ length: 10 }).map(() => genOTP());
-    totp = genTOTP();
+    totp = genTOTP(deviceName);
     await setDataInSecondCache(
       `${id}:mfa`,
       JSON.stringify({

@@ -84,6 +84,20 @@ export const editProfileSchema = z.object({
     .strip(),
 });
 
+export const setupMFASchema = z.object({
+  body: z
+    .object({
+      deviceName: z
+        .string({
+          invalid_type_error: "deviceName must be string",
+          required_error: "deviceName is required",
+        })
+        .max(128, "deviceName maximin 128 characters.")
+        .regex(/^[\d\w+=,.@\-_][\d\w\s+=,.@\-_]{0,127}$/, "deviceName "),
+    })
+    .strict(),
+});
+
 export const enableMFASchema = z.object({
   body: z
     .object({
@@ -111,4 +125,5 @@ export type ChangePasswordReq = z.infer<typeof changePasswordSchema>;
 export type CreatePasswordReq = z.infer<typeof createPasswordSchema>;
 export type ChangeAvatarReq = z.infer<typeof changeAvatarSchema>;
 export type editProfileReq = z.infer<typeof editProfileSchema>;
+export type SetupMFAReq = z.infer<typeof setupMFASchema>;
 export type EnableMFAReq = z.infer<typeof enableMFASchema>;
