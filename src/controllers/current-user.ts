@@ -36,6 +36,8 @@ import {
 } from "@/redis/cache";
 import qrcode from "qrcode";
 import { getMFAByUserId } from "@/services/mfa";
+import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
+import { insertGoogleLink } from "@/services/oauth";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -348,42 +350,42 @@ export async function disableMFAAccount(req: Request, res: Response) {
     .json({ message: "Multi-factor authentication (MFA) is disable" });
 }
 
-// export async function connectOauthProvider(
-//   req: Request<{ provider: "google" }>,
-//   res: Response
-// ) {
-//   const { id } = req.user!;
-//   const { provider } = req.params;
-//   const url = genGoogleAuthUrl({
-//     redirect_uri: `${configs.SERVER_URL}/api/v1/users/link/${provider}/callback`,
-//     state: id,
-//   });
-//   return res.redirect(url);
-// }
+export async function connectOauthProvider(
+  req: Request<{ provider: "google" }>,
+  res: Response
+) {
+  const { id } = req.user!;
+  const { provider } = req.params;
+  const url = genGoogleAuthUrl({
+    redirect_uri: `${configs.SERVER_URL}/api/v1/users/connect/${provider}/callback`,
+    state: id,
+  });
+  return res.redirect(url);
+}
 
-// export async function connectOauthProviderCallback(
-//   req: Request<
-//     { provider: "google" },
-//     {},
-//     {},
-//     {
-//       code?: string | string[] | undefined;
-//       error?: string | string[] | undefined;
-//       state?: string | string[] | undefined;
-//     }
-//   >,
-//   res: Response
-// ) {
-//   const { provider } = req.params;
-//   const { code, error, state } = req.query;
+export async function connectOauthProviderCallback(
+  req: Request<
+    { provider: "google" },
+    {},
+    {},
+    {
+      code?: string | string[] | undefined;
+      error?: string | string[] | undefined;
+      state?: string | string[] | undefined;
+    }
+  >,
+  res: Response
+) {
+  const { provider } = req.params;
+  const { code, error, state } = req.query;
 
-//   if (error || !code) throw new BadRequestError("fail connect");
+  if (error || !code) throw new BadRequestError("fail connect");
 
-//   const userInfo = await getGoogleUserProfile(code);
-//   await insertGoogleLink(userInfo.id, state);
-//   return res.status(StatusCodes.OK).json({ message: "oke" });
-// }
+  const userInfo = await getGoogleUserProfile(code);
+  await insertGoogleLink(userInfo.id, state);
+  return res.status(StatusCodes.OK).json({ message: "oke" });
+}
 
-// export async function disconnectOauthProvider(req: Request, res: Response) {
-//   return res.status(StatusCodes.OK).json({ message: "" });
-// }
+export async function disconnectOauthProvider(req: Request, res: Response) {
+  return res.status(StatusCodes.OK).json({ message: "" });
+}
