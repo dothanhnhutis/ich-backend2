@@ -36,7 +36,15 @@ const deserializeUser: Middleware = async (req, res, next) => {
 
     const cookieJson = JSON.parse(cookieRedis || "") as ISession;
 
-    const user = await getUserById(cookieJson.user.id);
+    const user = await getUserById(cookieJson.user.id, {
+      oauthProviders: {
+        select: {
+          id: true,
+          provider: true,
+          providerId: true,
+        },
+      },
+    });
 
     if (user) {
       req.user = user;

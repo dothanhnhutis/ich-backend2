@@ -36,8 +36,11 @@ export type GoogleUserInfo = {
   family_name: string;
   picture: string;
 };
-export async function getGoogleUserProfile(code: string) {
-  const { tokens } = await oAuth2Client.getToken(code);
+export async function getGoogleUserProfile(props: {
+  code: string;
+  redirect_uri?: string;
+}) {
+  const { tokens } = await oAuth2Client.getToken(props);
   oAuth2Client.setCredentials(tokens);
 
   const oauth2 = google.oauth2({

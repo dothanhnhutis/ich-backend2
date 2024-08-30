@@ -16,6 +16,7 @@ import {
   enableMFAAccount,
   connectOauthProvider,
   connectOauthProviderCallback,
+  disconnectOauthProvider,
 } from "@/controllers/current-user";
 import {
   changeAvatarSchema,
@@ -33,6 +34,7 @@ import {
 } from "@/controllers/user";
 import {
   creatUserSchema,
+  disconnectOauthProviderSchema,
   editUserSchema,
   searchUserSchema,
 } from "@/schemas/user";
@@ -143,6 +145,13 @@ function userRouter(): Router {
     "/users/mfa/disable",
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     disableMFAAccount
+  );
+  // User
+  router.post(
+    "/users/disconnect",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    validateResource(disconnectOauthProviderSchema),
+    disconnectOauthProvider
   );
   // User
   router.get(

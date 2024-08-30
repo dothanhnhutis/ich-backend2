@@ -278,14 +278,16 @@ export const editUserSchema = z.object({
     .partial(),
 });
 
-export const connectOauthProviderSchema = z.object({
-  body: z.object({
-    provider: z.enum(["google"]),
-    providerId: z.string({
-      invalid_type_error: "ProviderId must be string",
-      required_error: "ProviderId must be required",
-    }),
-  }),
+export const disconnectOauthProviderSchema = z.object({
+  body: z
+    .object({
+      provider: z.enum(["google"]),
+      providerId: z.string({
+        invalid_type_error: "ProviderId must be string",
+        required_error: "ProviderId must be required",
+      }),
+    })
+    .strict(),
 });
 
 export type Role = "Admin" | "Manager" | "Saler" | "Bloger" | "Customer";
@@ -293,6 +295,9 @@ export type UserStatus = "Active" | "Suspended" | "Disabled";
 export type CreateUserReq = z.infer<typeof creatUserSchema>;
 export type SearchUserReq = z.infer<typeof searchUserSchema>;
 export type EditUserReq = z.infer<typeof editUserSchema>;
+export type DisconnectOauthProviderReq = z.infer<
+  typeof disconnectOauthProviderSchema
+>;
 
 // export type User = {
 //   id: string;
@@ -340,6 +345,11 @@ export type User = {
     bio: string;
     urls: string[];
   } | null;
+  oauthProviders: {
+    id: string;
+    provider: string;
+    providerId: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 };

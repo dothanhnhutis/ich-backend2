@@ -37,7 +37,8 @@ import {
 import qrcode from "qrcode";
 import { getMFAByUserId } from "@/services/mfa";
 import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
-import { insertGoogleLink } from "@/services/oauth";
+import { deleteOauth, getProvider, insertGoogleLink } from "@/services/oauth";
+import { DisconnectOauthProviderReq } from "@/schemas/user";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -378,14 +379,46 @@ export async function connectOauthProviderCallback(
 ) {
   const { provider } = req.params;
   const { code, error, state } = req.query;
+  console.log(code, error, state);
+  if (
+    error ||
+    !code ||
+    typeof code == "object" ||
+    !state ||
+    typeof state == "object"
+  )
+    throw new BadRequestError("fail connect");
 
-  if (error || !code) throw new BadRequestError("fail connect");
-
-  const userInfo = await getGoogleUserProfile(code);
+  const userInfo = await getGoogleUserProfile({
+    code,
+    redirect_uri: `${configs.SERVER_URL}/api/v1/users/connect/${provider}/callback`,
+  });
   await insertGoogleLink(userInfo.id, state);
   return res.status(StatusCodes.OK).json({ message: "oke" });
 }
 
-export async function disconnectOauthProvider(req: Request, res: Response) {
-  return res.status(StatusCodes.OK).json({ message: "" });
+export async function disconnectOauthProvider(
+  req: Request<{}, {}, DisconnectOauthProviderReq["body"]>,
+  res: Response
+) {
+  const { oauthProviders, hasPassword } = req.user!;
+  const { provider, providerId } = req.body;
+  if (
+    oauthProviders.filter(
+      (o) => o.provider == provider && o.providerId == providerId
+    ).length == 0
+  )
+    throw new BadRequestError(`Unable to disconnect ${provider} provider`);
+  if (
+    oauthProviders.filter((o) => o.provider != provider).length == 0 &&
+    !hasPassword
+  )
+    throw new BadRequestError(
+      `Please create a password before disconnecting from the ${provider} provider.`
+    );
+
+  await deleteOauth(providerId, provider);
+  return res
+    .status(StatusCodes.OK)
+    .json({ message: `Disconnect to ${provider} success.` });
 }

@@ -367,6 +367,7 @@ export async function enableMFA(
     },
   });
 }
+
 export async function disableMFA(id: string) {
   await prisma.user.update({
     where: {

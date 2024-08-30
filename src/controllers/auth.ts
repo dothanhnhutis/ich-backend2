@@ -20,7 +20,7 @@ import { signJWT, verifyJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
 import { compareData, encrypt, genid, validateTOTP } from "@/utils/helper";
-import { getGoogleProviderById, insertGoogleLink } from "@/services/oauth";
+import { getProvider, insertGoogleLink } from "@/services/oauth";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
 import { deteleDataCache, setDataInMilisecondCache } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
@@ -303,8 +303,8 @@ export async function signInWithGoogleCallBack(
   if (error) res.redirect(ERROR_REDIRECT);
 
   if (code) {
-    const userInfo = await getGoogleUserProfile(code);
-    let googleProvider = await getGoogleProviderById(userInfo.id);
+    const userInfo = await getGoogleUserProfile({ code });
+    let googleProvider = await getProvider(userInfo.id, "google");
 
     if (!googleProvider) {
       const existAccount = await getUserByEmail(userInfo.email);
