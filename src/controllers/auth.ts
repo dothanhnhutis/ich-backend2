@@ -200,6 +200,12 @@ export async function signIn(
   req: Request<{}, {}, SignInReq["body"]>,
   res: Response
 ) {
+  console.log("----------------");
+  console.log(req.ip);
+  console.log(req.headers["user-agent"]);
+  console.log(UAParser(req.headers["user-agent"]));
+  console.log("----------------");
+
   const { email, password, mfa_code } = req.body;
   const user = await getUserByEmail(email, {
     password: true,
@@ -246,10 +252,6 @@ export async function signIn(
     secure: false,
     expires: new Date(Date.now() + SESSION_MAX_AGE),
   };
-
-  console.log(req.ip);
-  console.log(req.headers["user-agent"]);
-  console.log(UAParser(req.headers["user-agent"]));
 
   await setDataInMilisecondCache(
     sessionID,

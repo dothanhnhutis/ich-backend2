@@ -25,6 +25,11 @@ interface ISession {
 
 const deserializeUser: Middleware = async (req, res, next) => {
   const cookiesString = req.get("cookie");
+  // console.log("------------");
+  // console.log(req.ip);
+  // console.log(req.headers["user-agent"]);
+  // console.log(UAParser(req.headers["user-agent"]));
+  // console.log("------------");
   if (!cookiesString) return next();
   const cookies = parse(cookiesString);
   try {
@@ -33,8 +38,9 @@ const deserializeUser: Middleware = async (req, res, next) => {
       configs.SESSION_SECRET
     );
     const cookieRedis = await getDataCache(req.sessionID);
-
     const cookieJson = JSON.parse(cookieRedis || "") as ISession;
+    console.log(cookieJson);
+    console.log(req.sessionID);
 
     const user = await getUserById(cookieJson.user.id, {
       oauthProviders: {
