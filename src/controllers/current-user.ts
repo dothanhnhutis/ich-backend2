@@ -39,6 +39,7 @@ import { getMFAByUserId } from "@/services/mfa";
 import { genGoogleAuthUrl, getGoogleUserProfile } from "@/utils/oauth";
 import { deleteOauth, getProvider, insertGoogleLink } from "@/services/oauth";
 import { DisconnectOauthProviderReq } from "@/schemas/user";
+import { deleteSession, getAllSession } from "@/redis/cookie";
 
 export function currentUser(req: Request, res: Response) {
   res.status(StatusCodes.OK).json(req.user);
@@ -165,7 +166,7 @@ export async function disactivate(req: Request, res: Response) {
   await editUserById(id, {
     status: "Suspended",
   });
-  if (req.sessionID) await deteleDataCache(req.sessionID);
+  if (req.sessionId) await deleteSession(req.sessionId);
   res.status(StatusCodes.OK).clearCookie(configs.SESSION_KEY_NAME).json({
     message: "Your account has been disabled. You can reactivate at any time!",
   });
@@ -421,4 +422,9 @@ export async function disconnectOauthProvider(
   return res
     .status(StatusCodes.OK)
     .json({ message: `Disconnect to ${provider} success.` });
+}
+
+export async function readAllSession(req: Request, res: Response) {
+  const { id } = req.user!;
+  res.status(StatusCodes.OK).json(await getAllSession(id));
 }

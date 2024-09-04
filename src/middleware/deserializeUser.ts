@@ -1,66 +1,69 @@
-import { CookieOptions, RequestHandler as Middleware } from "express";
+import { RequestHandler as Middleware } from "express";
 import { parse } from "cookie";
 import { decrypt } from "@/utils/helper";
 import configs from "@/configs";
-import { deteleDataCache, getDataCache } from "@/redis/cache";
 import { User } from "@/schemas/user";
 import { getUserById } from "@/services/user";
+import {
+  deleteSession,
+  getSession,
+  ISessionData,
+  sessionLastAccess,
+} from "@/redis/cookie";
 
 declare global {
   namespace Express {
     interface Request {
-      sessionID?: string | undefined;
-      user?: User | undefined;
+      sessionId?: string | undefined;
+      sessionData?: ISessionData | undefined;
+      user?: User | null;
     }
   }
-}
-
-interface ISession {
-  user: {
-    id: string;
-  };
-  cookie: CookieOptions;
-  userAgent: string;
 }
 
 const deserializeUser: Middleware = async (req, res, next) => {
   const cookiesString = req.get("cookie");
-  // console.log("------------");
-  // console.log(req.ip);
-  // console.log(req.headers["user-agent"]);
-  // console.log(UAParser(req.headers["user-agent"]));
-  // console.log("------------");
+
   if (!cookiesString) return next();
   const cookies = parse(cookiesString);
-  try {
-    req.sessionID = decrypt(
-      cookies[configs.SESSION_KEY_NAME],
-      configs.SESSION_SECRET
-    );
-    const cookieRedis = await getDataCache(req.sessionID);
-    const cookieJson = JSON.parse(cookieRedis || "") as ISession;
-    console.log(cookieJson);
-    console.log(req.sessionID);
-
-    const user = await getUserById(cookieJson.user.id, {
-      oauthProviders: {
-        select: {
-          id: true,
-          provider: true,
-          providerId: true,
-        },
-      },
-    });
-
-    if (user) {
-      req.user = user;
-    } else {
-      res.clearCookie(configs.SESSION_KEY_NAME);
-      await deteleDataCache(req.sessionID);
-    }
-  } catch (error) {
+  req.sessionId = decrypt(
+    cookies[configs.SESSION_KEY_NAME],
+    configs.SESSION_SECRET
+  );
+  if (!req.sessionId) {
     res.clearCookie(configs.SESSION_KEY_NAME);
+    return next();
   }
+  req.sessionData = await getSession(req.sessionId);
+
+  if (!req.sessionData) {
+    res.clearCookie(configs.SESSION_KEY_NAME);
+    return next();
+  }
+
+  req.user = await getUserById(req.sessionData.userId, {
+    oauthProviders: {
+      select: {
+        id: true,
+        provider: true,
+        providerId: true,
+      },
+    },
+  });
+  if (req.user) {
+    const newSession = await sessionLastAccess(req.sessionId);
+    if (newSession) {
+      res.cookie(
+        configs.SESSION_KEY_NAME,
+        cookies[configs.SESSION_KEY_NAME],
+        newSession.cookie
+      );
+    }
+  } else {
+    res.clearCookie(configs.SESSION_KEY_NAME);
+    await deleteSession(req.sessionId);
+  }
+
   return next();
 };
 export default deserializeUser;

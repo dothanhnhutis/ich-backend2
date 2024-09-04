@@ -17,6 +17,7 @@ import {
   connectOauthProvider,
   connectOauthProviderCallback,
   disconnectOauthProvider,
+  readAllSession,
 } from "@/controllers/current-user";
 import {
   changeAvatarSchema,
@@ -62,6 +63,24 @@ function userRouter(): Router {
     checkPermission(["Admin"]),
     validateResource(searchUserSchema),
     searchUser
+  );
+  // User
+  router.get(
+    "/users/sessions",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    readAllSession
+  );
+  // User
+  router.get(
+    "/users/connect/:provider",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    connectOauthProvider
+  );
+  // User
+  router.get(
+    "/users/connect/:provider/callback",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    connectOauthProviderCallback
   );
   // Admin
   router.get(
@@ -153,20 +172,6 @@ function userRouter(): Router {
     validateResource(disconnectOauthProviderSchema),
     disconnectOauthProvider
   );
-  // User
-  router.get(
-    "/users/connect/:provider",
-    authMiddleware(["emailVerified", "disabled", "suspended"]),
-    connectOauthProvider
-  );
-  // User
-  router.get(
-    "/users/connect/:provider/callback",
-    authMiddleware(["emailVerified", "disabled", "suspended"]),
-    connectOauthProviderCallback
-  );
-
-  // router.get("/users/recover/:token", getUserRecoverToken);
 
   return router;
 }

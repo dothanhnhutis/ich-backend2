@@ -19,14 +19,21 @@ import {
 import { signJWT, verifyJWT } from "@/utils/jwt";
 import configs from "@/configs";
 import { google } from "googleapis";
-import { compareData, encrypt, genid, validateTOTP } from "@/utils/helper";
+import {
+  compareData,
+  encrypt,
+  genid,
+  rand,
+  validateTOTP,
+} from "@/utils/helper";
 import { getProvider, insertGoogleLink } from "@/services/oauth";
 import { emaiEnum, sendMail } from "@/utils/nodemailer";
-import { deteleDataCache, setDataInMilisecondCache } from "@/redis/cache";
+import { setDataInMilisecondCache } from "@/redis/cache";
 import { UAParser } from "ua-parser-js";
 import { omit } from "lodash";
 import { getGoogleUserProfile } from "@/utils/oauth";
 import { updateBackupCodeUsedById } from "@/services/mfa";
+import { createSession, deleteSession } from "@/redis/cookie";
 
 export async function reActivateAccount(
   req: Request<{ token: string }>,
@@ -245,32 +252,17 @@ export async function signIn(
       "Your account has been disabled. Please contact the administrator"
     );
 
-  const sessionID = `sid:${genid(user.id)}`;
-  const cookieOpt = {
-    path: "/",
-    httpOnly: true,
-    secure: false,
-    expires: new Date(Date.now() + SESSION_MAX_AGE),
-  };
-
-  await setDataInMilisecondCache(
-    sessionID,
-    JSON.stringify({
-      user: {
-        id: user.id,
-      },
-      cookie: cookieOpt,
-      ip: req.ip || "",
-      userAgent: req.headers["user-agent"] || "",
-    }),
-    Math.abs(cookieOpt.expires.getTime() - Date.now())
-  );
+  const { sessionId, cookieOpt } = await createSession({
+    userId: user.id,
+    reqIp: req.ip || "",
+    userAgent: req.headers["user-agent"] || "",
+  });
 
   return res
     .status(StatusCodes.OK)
     .cookie(
       configs.SESSION_KEY_NAME,
-      encrypt(sessionID, configs.SESSION_SECRET),
+      encrypt(sessionId, configs.SESSION_SECRET),
       cookieOpt
     )
     .json({
@@ -330,35 +322,16 @@ export async function signInWithGoogleCallBack(
     if (googleProvider.user.status == "Suspended")
       throw new BadRequestError("Your account has been suspended");
 
-    const sessionID = `sid:${genid(googleProvider.user.id)}`;
-    const cookieOpt = {
-      path: "/",
-      httpOnly: true,
-      secure: false,
-      expires: new Date(Date.now() + SESSION_MAX_AGE),
-    };
-
-    console.log(req.ip);
-    console.log(req.headers["user-agent"]);
-    console.log(UAParser(req.headers["user-agent"]));
-
-    await setDataInMilisecondCache(
-      sessionID,
-      JSON.stringify({
-        user: {
-          id: googleProvider.user.id,
-        },
-        cookie: cookieOpt,
-        ip: req.ip || "",
-        userAgent: req.headers["user-agent"] || "",
-      }),
-      Math.abs(cookieOpt.expires.getTime() - Date.now())
-    );
+    const { sessionId, cookieOpt } = await createSession({
+      userId: googleProvider.user.id,
+      reqIp: req.ip || "",
+      userAgent: req.headers["user-agent"] || "",
+    });
 
     return res
       .cookie(
         configs.SESSION_KEY_NAME,
-        encrypt(sessionID, configs.SESSION_SECRET),
+        encrypt(sessionId, configs.SESSION_SECRET),
         cookieOpt
       )
       .redirect(SUCCESS_REDIRECT);
@@ -366,7 +339,7 @@ export async function signInWithGoogleCallBack(
 }
 
 export async function signOut(req: Request, res: Response) {
-  if (req.sessionID) await deteleDataCache(req.sessionID);
+  if (req.sessionId) await deleteSession(req.sessionId);
   res
     .status(StatusCodes.OK)
     .clearCookie(configs.SESSION_KEY_NAME)
