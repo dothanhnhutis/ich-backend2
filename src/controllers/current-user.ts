@@ -31,6 +31,7 @@ import { uploadImageCloudinary } from "@/utils/image";
 import {
   deteleDataCache,
   getDataCache,
+  getKeyByPattern,
   setDataCache,
   setDataInSecondCache,
 } from "@/redis/cache";
@@ -427,4 +428,16 @@ export async function disconnectOauthProvider(
 export async function readAllSession(req: Request, res: Response) {
   const { id } = req.user!;
   res.status(StatusCodes.OK).json(await getAllSession(id));
+}
+
+export async function removeSession(
+  req: Request<{ sessionId: string }>,
+  res: Response
+) {
+  if (req.sessionId == req.params.sessionId)
+    throw new BadRequestError("Cannot delete current session");
+  await deleteSession(req.params.sessionId);
+  res.status(StatusCodes.OK).json({
+    message: "delete session success",
+  });
 }

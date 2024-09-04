@@ -73,8 +73,8 @@ export const getSession = async (id: string) => {
   }
 };
 
-export const sessionLastAccess = async (cookieId: string) => {
-  const sessionCache = await getDataCache(cookieId);
+export const sessionLastAccess = async (sessionId: string) => {
+  const sessionCache = await getDataCache(sessionId);
   if (sessionCache == null) return;
   try {
     const sessionData = JSON.parse(sessionCache) as ISessionData;
@@ -83,7 +83,7 @@ export const sessionLastAccess = async (cookieId: string) => {
     sessionData.reqInfo.lastAccess = now;
     sessionData.cookie.expires = new Date(now.getTime() + SESSION_MAX_AGE);
     await setDataInMilisecondCache(
-      cookieId,
+      sessionId,
       JSON.stringify(sessionData),
       Math.abs(sessionData.cookie.expires.getTime() - Date.now())
     );
@@ -95,7 +95,6 @@ export const sessionLastAccess = async (cookieId: string) => {
 
 export const getAllSession = async (userId: string) => {
   const keys = await getKeyByPattern(`${configs.SESSION_KEY_NAME}:${userId}:*`);
-  console.log(keys);
   const data: ISessionData[] = [];
   for (const id of keys) {
     const sessionCache = await getDataCache(id);

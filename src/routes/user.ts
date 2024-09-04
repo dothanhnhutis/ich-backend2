@@ -18,6 +18,7 @@ import {
   connectOauthProviderCallback,
   disconnectOauthProvider,
   readAllSession,
+  removeSession,
 } from "@/controllers/current-user";
 import {
   changeAvatarSchema,
@@ -171,6 +172,13 @@ function userRouter(): Router {
     authMiddleware(["emailVerified", "disabled", "suspended"]),
     validateResource(disconnectOauthProviderSchema),
     disconnectOauthProvider
+  );
+
+  // User
+  router.delete(
+    "/users/sessions/:sessionId",
+    authMiddleware(["emailVerified", "disabled", "suspended"]),
+    removeSession
   );
 
   return router;
